@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(npm install:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(rm:*)",
+      "Bash(npm uninstall:*)"
+    ],
+    "deny": []
+  }
+}
