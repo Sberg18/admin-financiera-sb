@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Table,
   TableBody,
@@ -13,28 +13,52 @@ import {
   Chip,
   CircularProgress
 } from '@mui/material'
-import { Delete as DeleteIcon } from '@mui/icons-material'
+import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material'
 import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
 import api from '../services/api'
+import DateFilter from './DateFilter'
+import EditIncomeModal from './EditIncomeModal'
 
 const IncomeList = () => {
   const queryClient = useQueryClient()
+  const [dateFilter, setDateFilter] = useState(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedIncome, setSelectedIncome] = useState(null)
   
   const { data, isLoading, error } = useQuery(
-    ['incomes'],
+    ['incomes', dateFilter],
     async () => {
-      const response = await api.get('/incomes')
+      let url = '/incomes'
+      if (dateFilter) {
+        if (dateFilter.type === 'monthly') {
+          url = `/incomes?year=${dateFilter.year}&month=${dateFilter.month}`
+        } else if (dateFilter.type === 'range') {
+          url = `/incomes?startDate=${dateFilter.startDate}&endDate=${dateFilter.endDate}`
+        }
+      }
+      const response = await api.get(url)
       return response.incomes
+    },
+    {
+      refetchOnMount: true
     }
   )
 
+  const handleEdit = (income) => {
+    setSelectedIncome(income)
+    setEditModalOpen(true)
+  }
+
   const handleDelete = async (id) => {
-    try {
-      await api.delete(`/incomes/${id}`)
-      queryClient.invalidateQueries(['incomes'])
-    } catch (error) {
-      console.error('Error deleting income:', error)
+    if (window.confirm('¿Estás seguro de que quieres eliminar este ingreso?')) {
+      try {
+        await api.delete(`/incomes/${id}`)
+        queryClient.invalidateQueries(['incomes'])
+        queryClient.invalidateQueries(['incomes-current-month'])
+      } catch (error) {
+        console.error('Error deleting income:', error)
+      }
     }
   }
 
@@ -56,14 +80,26 @@ const IncomeList = () => {
 
   if (!data || data.length === 0) {
     return (
-      <Typography align="center" color="textSecondary" sx={{ py: 4 }}>
-        No hay ingresos registrados
-      </Typography>
+      <Box>
+        <DateFilter
+          onDateChange={setDateFilter}
+          title="Filtrar Ingresos"
+        />
+        <Typography align="center" color="textSecondary" sx={{ py: 4 }}>
+          {dateFilter ? 'No hay ingresos registrados para el período seleccionado' : 'No hay ingresos registrados'}
+        </Typography>
+      </Box>
     )
   }
 
   return (
-    <TableContainer component={Paper} elevation={0}>
+    <Box>
+      <DateFilter
+        onDateChange={setDateFilter}
+        title="Filtrar Ingresos"
+      />
+      
+      <TableContainer component={Paper} elevation={0}>
       <Table>
         <TableHead>
           <TableRow>
@@ -101,6 +137,13 @@ const IncomeList = () => {
               </TableCell>
               <TableCell align="center">
                 <IconButton
+                  color="primary"
+                  size="small"
+                  onClick={() => handleEdit(income)}
+                >
+                  <EditIcon />
+                </IconButton>
+                <IconButton
                   color="error"
                   size="small"
                   onClick={() => handleDelete(income.id)}
@@ -113,6 +156,16 @@ const IncomeList = () => {
         </TableBody>
       </Table>
     </TableContainer>
+
+    <EditIncomeModal
+      open={editModalOpen}
+      onClose={() => {
+        setEditModalOpen(false)
+        setSelectedIncome(null)
+      }}
+      income={selectedIncome}
+    />
+    </Box>
   )
 }
 

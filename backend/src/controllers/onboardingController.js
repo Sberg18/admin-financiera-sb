@@ -1,5 +1,5 @@
 const { validationResult } = require('express-validator');
-const { Bank, AssetType, UserSettings, CreditCard, UserAsset } = require('../models');
+const { Bank, AssetType, UserSettings, CreditCard, CardType, UserAsset } = require('../models');
 
 const getBanks = async (req, res) => {
   try {
@@ -82,7 +82,10 @@ const getCreditCards = async (req, res) => {
   try {
     const creditCards = await CreditCard.findAll({
       where: { userId: req.user.id },
-      include: [{ model: Bank, as: 'bank' }],
+      include: [
+        { model: Bank, as: 'bank' },
+        { model: CardType, as: 'cardType' }
+      ],
       order: [['created_at', 'DESC']]
     });
 
@@ -98,6 +101,68 @@ const getCreditCards = async (req, res) => {
     });
   }
 };
+
+const updateCreditCard = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { closingDay, paymentDay } = req.body
+
+    const creditCard = await CreditCard.findOne({
+      where: { id, userId: req.user.id }
+    })
+
+    if (!creditCard) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tarjeta no encontrada'
+      })
+    }
+
+    await creditCard.update({ closingDay, paymentDay })
+
+    res.json({
+      success: true,
+      message: 'Tarjeta actualizada exitosamente',
+      creditCard
+    })
+  } catch (error) {
+    console.error('Update credit card error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    })
+  }
+}
+
+const deleteCreditCard = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const creditCard = await CreditCard.findOne({
+      where: { id, userId: req.user.id }
+    })
+
+    if (!creditCard) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tarjeta no encontrada'
+      })
+    }
+
+    await creditCard.destroy()
+
+    res.json({
+      success: true,
+      message: 'Tarjeta eliminada exitosamente'
+    })
+  } catch (error) {
+    console.error('Delete credit card error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    })
+  }
+}
 
 const addAsset = async (req, res) => {
   try {
@@ -206,6 +271,8 @@ module.exports = {
   getAssetTypes,
   addCreditCard,
   getCreditCards,
+  updateCreditCard,
+  deleteCreditCard,
   addAsset,
   getUserAssets,
   completeOnboarding,

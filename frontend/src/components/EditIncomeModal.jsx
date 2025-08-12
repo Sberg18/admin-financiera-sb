@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -20,13 +20,13 @@ import {
   Box,
   Chip
 } from '@mui/material'
-import { Add as AddIcon } from '@mui/icons-material'
+import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
 import api from '../services/api'
 
-const AddIncomeModal = ({ open, onClose }) => {
+const EditIncomeModal = ({ open, onClose, income }) => {
   const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -50,6 +50,20 @@ const AddIncomeModal = ({ open, onClose }) => {
     '#4CAF50', '#2196F3', '#FF9800', '#F44336', 
     '#9C27B0', '#00BCD4', '#795548', '#607D8B'
   ]
+
+  // Cargar datos del ingreso cuando se abre el modal
+  useEffect(() => {
+    if (income) {
+      setFormData({
+        amount: income.amount?.toString() || '',
+        description: income.description || '',
+        incomeDate: income.incomeDate ? dayjs(income.incomeDate) : dayjs(),
+        isRecurring: income.isRecurring || false,
+        recurringFrequency: income.recurringFrequency || 'monthly',
+        categoryId: income.categoryId || ''
+      })
+    }
+  }, [income])
 
   const { data: incomeCategories } = useQuery(
     ['income-categories'],
@@ -78,16 +92,13 @@ const AddIncomeModal = ({ open, onClose }) => {
       setLoading(true)
       const response = await api.post('/categories/incomes', newCategory)
       
-      // Actualizar la lista de categorías
       queryClient.invalidateQueries(['income-categories'])
       
-      // Seleccionar automáticamente la nueva categoría
       setFormData({
         ...formData,
         categoryId: response.category.id
       })
       
-      // Resetear formulario de categoría
       setNewCategory({ name: '', color: '#4CAF50' })
       setShowNewCategoryForm(false)
       
@@ -113,26 +124,16 @@ const AddIncomeModal = ({ open, onClose }) => {
         delete submitData.recurringFrequency
       }
 
-      await api.post('/incomes', submitData)
+      await api.put(`/incomes/${income.id}`, submitData)
       
       queryClient.invalidateQueries(['incomes'])
       queryClient.invalidateQueries(['incomes-current-month'])
       queryClient.invalidateQueries(['expenses'])
       queryClient.invalidateQueries(['income-categories'])
       
-      // Reset form
-      setFormData({
-        amount: '',
-        description: '',
-        incomeDate: dayjs(),
-        isRecurring: false,
-        recurringFrequency: 'monthly',
-        categoryId: ''
-      })
-      
       onClose()
     } catch (error) {
-      setError(error.response?.data?.message || 'Error al crear el ingreso')
+      setError(error.response?.data?.message || 'Error al actualizar el ingreso')
     } finally {
       setLoading(false)
     }
@@ -140,7 +141,14 @@ const AddIncomeModal = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Agregar Nuevo Ingreso</DialogTitle>
+      <DialogTitle>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          Editar Ingreso
+          <IconButton onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -221,7 +229,6 @@ const AddIncomeModal = ({ open, onClose }) => {
             </Box>
           </Grid>
           
-          {/* Formulario para nueva categoría */}
           {showNewCategoryForm && (
             <>
               <Grid item xs={12}>
@@ -327,11 +334,11 @@ const AddIncomeModal = ({ open, onClose }) => {
           variant="contained"
           disabled={loading || !formData.amount}
         >
-          {loading ? <CircularProgress size={20} /> : 'Guardar'}
+          {loading ? <CircularProgress size={20} /> : 'Actualizar'}
         </Button>
       </DialogActions>
     </Dialog>
   )
 }
 
-export default AddIncomeModal
+export default EditIncomeModal

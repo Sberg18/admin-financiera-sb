@@ -43,6 +43,19 @@ router.post('/credit-cards', [
 
 router.get('/credit-cards', onboardingController.getCreditCards);
 
+router.put('/credit-cards/:id', [
+  body('closingDay')
+    .optional({ nullable: true })
+    .isInt({ min: 1, max: 31 })
+    .withMessage('Día de cierre debe estar entre 1 y 31'),
+  body('paymentDay')
+    .optional({ nullable: true })
+    .isInt({ min: 1, max: 31 })
+    .withMessage('Día de pago debe estar entre 1 y 31')
+], onboardingController.updateCreditCard);
+
+router.delete('/credit-cards/:id', onboardingController.deleteCreditCard);
+
 // Gestión de activos
 router.post('/assets', [
   body('assetTypeId')

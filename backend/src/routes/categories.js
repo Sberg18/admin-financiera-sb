@@ -19,6 +19,16 @@ router.post('/expenses', [
     .withMessage('El color debe ser un código hexadecimal válido')
 ], categoryController.createExpenseCategory);
 
+router.put('/expenses/:id', [
+  body('name')
+    .notEmpty()
+    .withMessage('El nombre de la categoría es requerido'),
+  body('color')
+    .optional()
+    .matches(/^#[0-9A-F]{6}$/i)
+    .withMessage('El color debe ser un código hexadecimal válido')
+], categoryController.updateExpenseCategory);
+
 // Rutas para categorías de ingresos
 router.get('/incomes', categoryController.getIncomeCategories);
 router.post('/incomes', [
@@ -30,5 +40,15 @@ router.post('/incomes', [
     .matches(/^#[0-9A-F]{6}$/i)
     .withMessage('El color debe ser un código hexadecimal válido')
 ], categoryController.createIncomeCategory);
+
+router.put('/incomes/:id', [
+  body('name')
+    .notEmpty()
+    .withMessage('El nombre de la categoría es requerido'),
+  body('color')
+    .optional()
+    .matches(/^#[0-9A-F]{6}$/i)
+    .withMessage('El color debe ser un código hexadecimal válido')
+], categoryController.updateIncomeCategory);
 
 module.exports = router;

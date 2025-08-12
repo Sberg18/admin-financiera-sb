@@ -36,6 +36,11 @@ const Expense = sequelize.define('Expense', {
     allowNull: false,
     field: 'expense_date'
   },
+  paymentDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'payment_date'
+  },
   paymentMethod: {
     type: DataTypes.ENUM('cash', 'credit_card', 'debit_card'),
     allowNull: false,

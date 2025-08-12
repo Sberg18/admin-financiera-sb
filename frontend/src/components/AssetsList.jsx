@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Table,
   TableBody,
@@ -26,14 +26,24 @@ import {
 import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
 import api from '../services/api'
+import DateFilter from './DateFilter'
 
 const AssetsList = () => {
   const queryClient = useQueryClient()
+  const [dateFilter, setDateFilter] = useState(null)
   
   const { data, isLoading, error } = useQuery(
-    ['assets'],
+    ['assets', dateFilter],
     async () => {
-      const response = await api.get('/onboarding/assets')
+      let url = '/onboarding/assets'
+      if (dateFilter) {
+        if (dateFilter.type === 'monthly') {
+          url = `/onboarding/assets?year=${dateFilter.year}&month=${dateFilter.month}`
+        } else if (dateFilter.type === 'range') {
+          url = `/onboarding/assets?startDate=${dateFilter.startDate}&endDate=${dateFilter.endDate}`
+        }
+      }
+      const response = await api.get(url)
       return response.assets
     }
   )
@@ -121,6 +131,11 @@ const AssetsList = () => {
 
   return (
     <Box>
+      <DateFilter
+        onDateChange={setDateFilter}
+        title="Filtrar Activos por Fecha de Compra"
+      />
+      
       {Object.entries(groupedAssets).map(([category, assets]) => (
         <Box key={category} mb={4}>
           <Box display="flex" alignItems="center" mb={2}>

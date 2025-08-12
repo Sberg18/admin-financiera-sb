@@ -1,5 +1,6 @@
 const User = require('./User');
 const Bank = require('./Bank');
+const CardType = require('./CardType');
 const CreditCard = require('./CreditCard');
 const Expense = require('./Expense');
 const Income = require('./Income');
@@ -14,6 +15,9 @@ CreditCard.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 Bank.hasMany(CreditCard, { foreignKey: 'bankId', as: 'creditCards' });
 CreditCard.belongsTo(Bank, { foreignKey: 'bankId', as: 'bank' });
+
+CardType.hasMany(CreditCard, { foreignKey: 'cardTypeId', as: 'creditCards' });
+CreditCard.belongsTo(CardType, { foreignKey: 'cardTypeId', as: 'cardType' });
 
 User.hasMany(Expense, { foreignKey: 'userId', as: 'expenses' });
 Expense.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -42,6 +46,7 @@ Income.belongsTo(IncomeCategory, { foreignKey: 'categoryId', as: 'category' });
 module.exports = {
   User,
   Bank,
+  CardType,
   CreditCard,
   Expense,
   Income,

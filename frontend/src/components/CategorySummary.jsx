@@ -19,27 +19,61 @@ import {
   MenuItem,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField
 } from '@mui/material'
 import {
   ExpandMore,
   CreditCard,
   MonetizationOn,
-  AccountBalance
+  AccountBalance,
+  Edit as EditIcon
 } from '@mui/icons-material'
-import { useQuery } from 'react-query'
+import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
 import api from '../services/api'
+import DateFilter from './DateFilter'
+import EditExpenseModal from './EditExpenseModal'
 
-const CategorySummary = () => {
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'))
+const CategorySummary = ({ selectedCategoryId }) => {
+  const queryClient = useQueryClient()
+  const [dateFilter, setDateFilter] = useState(null)
+  const [expandedCategory, setExpandedCategory] = useState(selectedCategoryId)
+  const [editCategoryModalOpen, setEditCategoryModalOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [editExpenseModalOpen, setEditExpenseModalOpen] = useState(false)
+  const [selectedExpense, setSelectedExpense] = useState(null)
+
+  // Actualizar categoría expandida cuando se reciba un nuevo selectedCategoryId
+  React.useEffect(() => {
+    if (selectedCategoryId) {
+      setExpandedCategory(selectedCategoryId)
+    }
+  }, [selectedCategoryId])
 
   const { data: monthlyExpenses, isLoading } = useQuery(
-    ['expenses-summary', selectedMonth],
+    ['expenses-summary', dateFilter],
     async () => {
-      const [year, month] = selectedMonth.split('-')
-      const response = await api.get(`/expenses?year=${year}&month=${month}`)
+      if (!dateFilter) return []
+      
+      let url = '/expenses'
+      if (dateFilter.type === 'monthly') {
+        url = `/expenses?year=${dateFilter.year}&month=${dateFilter.month}`
+      } else if (dateFilter.type === 'range') {
+        url = `/expenses?startDate=${dateFilter.startDate}&endDate=${dateFilter.endDate}`
+      }
+      
+      const response = await api.get(url)
       return response.expenses || []
+    },
+    {
+      enabled: !!dateFilter
     }
   )
 
@@ -57,29 +91,28 @@ const CategorySummary = () => {
       expense.categoryId === category.id
     ) || []
 
-    if (categoryExpenses.length > 0) {
-      const paymentMethods = {
-        cash: categoryExpenses.filter(e => e.paymentMethod === 'cash'),
-        debit_card: categoryExpenses.filter(e => e.paymentMethod === 'debit_card'),
-        credit_card: categoryExpenses.filter(e => e.paymentMethod === 'credit_card')
-      }
-
-      const totals = {
-        cash: paymentMethods.cash.reduce((sum, e) => sum + parseFloat(e.amount), 0),
-        debit_card: paymentMethods.debit_card.reduce((sum, e) => sum + parseFloat(e.amount), 0),
-        credit_card: paymentMethods.credit_card.reduce((sum, e) => sum + parseFloat(e.amount), 0)
-      }
-
-      const total = totals.cash + totals.debit_card + totals.credit_card
-
-      acc[category.id] = {
-        ...category,
-        expenses: categoryExpenses,
-        paymentMethods,
-        totals,
-        total
-      }
+    const paymentMethods = {
+      cash: categoryExpenses.filter(e => e.paymentMethod === 'cash'),
+      debit_card: categoryExpenses.filter(e => e.paymentMethod === 'debit_card'),
+      credit_card: categoryExpenses.filter(e => e.paymentMethod === 'credit_card')
     }
+
+    const totals = {
+      cash: paymentMethods.cash.reduce((sum, e) => sum + parseFloat(e.amount), 0),
+      debit_card: paymentMethods.debit_card.reduce((sum, e) => sum + parseFloat(e.amount), 0),
+      credit_card: paymentMethods.credit_card.reduce((sum, e) => sum + parseFloat(e.amount), 0)
+    }
+
+    const total = totals.cash + totals.debit_card + totals.credit_card
+
+    acc[category.id] = {
+      ...category,
+      expenses: categoryExpenses,
+      paymentMethods,
+      totals,
+      total
+    }
+    
     return acc
   }, {}) || {}
 
@@ -130,33 +163,48 @@ const CategorySummary = () => {
 
   const grandTotal = totalByPaymentMethod.cash + totalByPaymentMethod.debit_card + totalByPaymentMethod.credit_card
 
+  const handleEditCategory = (category) => {
+    setSelectedCategory({
+      ...category,
+      type: 'expense' // Asumimos que son categorías de gastos por ahora
+    })
+    setEditCategoryModalOpen(true)
+  }
+
+  const handleUpdateCategory = async () => {
+    try {
+      await api.put(`/categories/expenses/${selectedCategory.id}`, {
+        name: selectedCategory.name,
+        color: selectedCategory.color
+      })
+      queryClient.invalidateQueries(['expense-categories'])
+      queryClient.invalidateQueries(['expenses-summary'])
+      setEditCategoryModalOpen(false)
+      setSelectedCategory(null)
+    } catch (error) {
+      console.error('Error updating category:', error)
+      const message = error.response?.data?.message || 'Error al actualizar la categoría'
+      alert(message)
+    }
+  }
+
+  const handleEditExpense = (expense) => {
+    setSelectedExpense(expense)
+    setEditExpenseModalOpen(true)
+  }
+
   if (isLoading) return <Typography>Cargando resumen...</Typography>
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-        <Typography variant="h5" gutterBottom>
-          Resumen por Categorías
-        </Typography>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Mes</InputLabel>
-          <Select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            label="Mes"
-          >
-            {Array.from({ length: 12 }, (_, i) => {
-              const date = dayjs().month(i)
-              const value = date.format('YYYY-MM')
-              return (
-                <MenuItem key={value} value={value}>
-                  {date.format('MMMM YYYY')}
-                </MenuItem>
-              )
-            })}
-          </Select>
-        </FormControl>
-      </Box>
+      <Typography variant="h5" gutterBottom>
+        Resumen por Categorías
+      </Typography>
+      
+      <DateFilter
+        onDateChange={setDateFilter}
+        title="Filtrar por Período"
+      />
 
       {/* Resumen total por método de pago */}
       <Paper sx={{ p: 2, mb: 3 }}>
@@ -229,7 +277,14 @@ const CategorySummary = () => {
       {/* Detalle por categoría */}
       <Box>
         {Object.values(groupedByCategory).map((categoryData) => (
-          <Accordion key={categoryData.id} sx={{ mb: 1 }}>
+          <Accordion 
+            key={categoryData.id} 
+            sx={{ mb: 1 }}
+            expanded={expandedCategory === categoryData.id}
+            onChange={(event, isExpanded) => {
+              setExpandedCategory(isExpanded ? categoryData.id : false)
+            }}
+          >
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Box display="flex" alignItems="center" gap={2} width="100%">
                 <Box
@@ -243,9 +298,32 @@ const CategorySummary = () => {
                 <Typography variant="h6" sx={{ flexGrow: 1 }}>
                   {categoryData.name}
                 </Typography>
-                <Typography variant="h6" color="text.secondary">
-                  ${categoryData.total.toLocaleString()}
-                </Typography>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Typography variant="h6" color="text.secondary">
+                    ${categoryData.total.toLocaleString()}
+                  </Typography>
+                  {categoryData.userId !== null && (
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEditCategory(categoryData)
+                      }}
+                      sx={{ ml: 1 }}
+                      title="Editar categoría"
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                  {categoryData.userId === null && (
+                    <Chip 
+                      label="Sistema" 
+                      size="small" 
+                      variant="outlined" 
+                      sx={{ ml: 1, fontSize: '0.7rem' }}
+                    />
+                  )}
+                </Box>
               </Box>
             </AccordionSummary>
             
@@ -279,7 +357,15 @@ const CategorySummary = () => {
                   </TableHead>
                   <TableBody>
                     {categoryData.expenses.map((expense) => (
-                      <TableRow key={expense.id}>
+                      <TableRow 
+                        key={expense.id}
+                        hover
+                        sx={{ 
+                          cursor: 'pointer',
+                          '&:hover': { backgroundColor: 'action.hover' }
+                        }}
+                        onClick={() => handleEditExpense(expense)}
+                      >
                         <TableCell>
                           {dayjs(expense.expenseDate).format('DD/MM')}
                         </TableCell>
@@ -316,6 +402,68 @@ const CategorySummary = () => {
           </Typography>
         </Paper>
       )}
+
+      {/* Modal para editar categorías */}
+      <Dialog open={editCategoryModalOpen} onClose={() => setEditCategoryModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Editar Categoría</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Nombre de la Categoría"
+                  value={selectedCategory?.name || ''}
+                  onChange={(e) => setSelectedCategory({...selectedCategory, name: e.target.value})}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Color"
+                  type="color"
+                  value={selectedCategory?.color || '#757575'}
+                  onChange={(e) => setSelectedCategory({...selectedCategory, color: e.target.value})}
+                  InputProps={{
+                    startAdornment: (
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          backgroundColor: selectedCategory?.color || '#757575',
+                          mr: 1,
+                          border: '1px solid #ccc'
+                        }}
+                      />
+                    )
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditCategoryModalOpen(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleUpdateCategory}
+            disabled={!selectedCategory?.name}
+          >
+            Guardar Cambios
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal para editar gastos */}
+      <EditExpenseModal
+        open={editExpenseModalOpen}
+        onClose={() => {
+          setEditExpenseModalOpen(false)
+          setSelectedExpense(null)
+        }}
+        expense={selectedExpense}
+      />
     </Box>
   )
 }

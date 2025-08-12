@@ -1,6 +1,28 @@
 const { validationResult } = require('express-validator');
-const { Expense, CreditCard, Bank } = require('../models');
+const { Expense, CreditCard, Bank, CardType } = require('../models');
 const { Op } = require('sequelize');
+
+const calculatePaymentDate = (expenseDate, paymentMethod, creditCard) => {
+  if (paymentMethod !== 'credit_card' || !creditCard) {
+    // Para efectivo y débito, la fecha de pago es la misma que la fecha de gasto
+    return expenseDate;
+  }
+
+  const expenseDateObj = new Date(expenseDate);
+  const closingDay = creditCard.closingDay || 31;
+  const paymentDay = creditCard.paymentDay || 10;
+  
+  // Si el gasto es después del cierre del mes, se va al siguiente ciclo
+  if (expenseDateObj.getDate() > closingDay) {
+    // Siguiente mes para el cierre
+    const nextMonth = new Date(expenseDateObj.getFullYear(), expenseDateObj.getMonth() + 2, paymentDay);
+    return nextMonth.toISOString().split('T')[0];
+  } else {
+    // Mes siguiente al del gasto
+    const nextMonth = new Date(expenseDateObj.getFullYear(), expenseDateObj.getMonth() + 1, paymentDay);
+    return nextMonth.toISOString().split('T')[0];
+  }
+};
 
 const createExpense = async (req, res) => {
   try {
@@ -13,9 +35,15 @@ const createExpense = async (req, res) => {
       });
     }
 
+    let creditCard = null;
+    if (req.body.paymentMethod === 'credit_card' && req.body.creditCardId) {
+      creditCard = await CreditCard.findByPk(req.body.creditCardId);
+    }
+
     const expenseData = {
       ...req.body,
-      userId: req.user.id
+      userId: req.user.id,
+      paymentDate: calculatePaymentDate(req.body.expenseDate, req.body.paymentMethod, creditCard)
     };
 
     if (expenseData.paymentMethod === 'credit_card' && expenseData.installments > 1) {
@@ -23,14 +51,19 @@ const createExpense = async (req, res) => {
       const installmentAmount = (expenseData.amount / expenseData.installments).toFixed(2);
       
       for (let i = 1; i <= expenseData.installments; i++) {
-        const installmentDate = new Date(expenseData.expenseDate);
-        installmentDate.setMonth(installmentDate.getMonth() + (i - 1));
+        // La fecha de compra siempre es la misma (expenseDate original)
+        // Solo calculamos diferentes fechas de vencimiento
+        const basePaymentDate = calculatePaymentDate(expenseData.expenseDate, expenseData.paymentMethod, creditCard);
+        const installmentPaymentDate = new Date(basePaymentDate);
+        installmentPaymentDate.setMonth(installmentPaymentDate.getMonth() + (i - 1));
         
         expenses.push(await Expense.create({
           ...expenseData,
+          amount: installmentAmount, // Usar el monto de la cuota, no el total
           currentInstallment: i,
           installmentAmount: installmentAmount,
-          expenseDate: installmentDate.toISOString().split('T')[0],
+          expenseDate: expenseData.expenseDate, // Fecha de compra original
+          paymentDate: installmentPaymentDate.toISOString().split('T')[0], // Fecha de vencimiento calculada
           description: `${expenseData.description} (Cuota ${i}/${expenseData.installments})`
         }));
       }
@@ -60,18 +93,70 @@ const createExpense = async (req, res) => {
 
 const getExpenses = async (req, res) => {
   try {
-    const { month, year, page = 1, limit = 10 } = req.query;
+    const { month, year, startDate, endDate, page = 1, limit = 100 } = req.query;
     const offset = (page - 1) * limit;
     
     let whereClause = { userId: req.user.id };
     
+    // Filtro por mes y año específico
     if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0);
+      const start = new Date(year, month - 1, 1);
+      const end = new Date(year, month, 0);
       
-      whereClause.expenseDate = {
-        [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
-      };
+      // Para tarjetas de crédito, filtramos por paymentDate
+      // Para efectivo/débito, por expenseDate
+      whereClause[Op.or] = [
+        {
+          paymentMethod: 'credit_card',
+          paymentDate: {
+            [Op.between]: [start.toISOString().split('T')[0], end.toISOString().split('T')[0]]
+          }
+        },
+        {
+          paymentMethod: { [Op.in]: ['cash', 'debit_card'] },
+          expenseDate: {
+            [Op.between]: [start.toISOString().split('T')[0], end.toISOString().split('T')[0]]
+          }
+        }
+      ];
+    }
+    // Filtro por rango de fechas
+    else if (startDate && endDate) {
+      whereClause[Op.or] = [
+        {
+          paymentMethod: 'credit_card',
+          paymentDate: {
+            [Op.between]: [startDate, endDate]
+          }
+        },
+        {
+          paymentMethod: { [Op.in]: ['cash', 'debit_card'] },
+          expenseDate: {
+            [Op.between]: [startDate, endDate]
+          }
+        }
+      ];
+    }
+    // Si no hay filtros, mostrar los últimos 3 meses por defecto
+    else if (!month && !year && !startDate && !endDate) {
+      const today = new Date();
+      const threeMonthsAgo = new Date(today);
+      threeMonthsAgo.setMonth(today.getMonth() - 3);
+      
+      whereClause[Op.or] = [
+        {
+          paymentMethod: 'credit_card',
+          paymentDate: {
+            [Op.gte]: threeMonthsAgo.toISOString().split('T')[0]
+          }
+        },
+        {
+          paymentMethod: { [Op.in]: ['cash', 'debit_card'] },
+          expenseDate: {
+            [Op.gte]: threeMonthsAgo.toISOString().split('T')[0]
+          }
+        }
+      ];
     }
 
     const { count, rows: expenses } = await Expense.findAndCountAll({
@@ -80,7 +165,10 @@ const getExpenses = async (req, res) => {
         {
           model: CreditCard,
           as: 'creditCard',
-          include: [{ model: Bank, as: 'bank' }]
+          include: [
+            { model: Bank, as: 'bank' },
+            { model: CardType, as: 'cardType' }
+          ]
         }
       ],
       order: [['expenseDate', 'DESC']],
@@ -137,8 +225,54 @@ const deleteExpense = async (req, res) => {
   }
 };
 
+const updateExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const expense = await Expense.findOne({
+      where: { id, userId: req.user.id }
+    });
+    
+    if (!expense) {
+      return res.status(404).json({
+        success: false,
+        message: 'Gasto no encontrado'
+      });
+    }
+
+    let creditCard = null;
+    if (req.body.paymentMethod === 'credit_card' && req.body.creditCardId) {
+      creditCard = await CreditCard.findByPk(req.body.creditCardId);
+    }
+
+    const updateData = {
+      ...req.body,
+      paymentDate: calculatePaymentDate(
+        req.body.expenseDate || expense.expenseDate, 
+        req.body.paymentMethod || expense.paymentMethod, 
+        creditCard
+      )
+    };
+
+    await expense.update(updateData);
+
+    res.json({
+      success: true,
+      message: 'Gasto actualizado exitosamente',
+      expense
+    });
+  } catch (error) {
+    console.error('Update expense error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   createExpense,
   getExpenses,
+  updateExpense,
   deleteExpense
 };

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const sequelize = require('./config/database');
 
 const authRoutes = require('./routes/auth');
@@ -48,12 +49,22 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Ruta no encontrada'
+// Servir archivos estáticos del frontend en producción
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../public')));
+  
+  // Catch all handler: enviar back react app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
   });
-});
+} else {
+  app.use('*', (req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'Ruta no encontrada'
+    });
+  });
+}
 
 app.use((error, req, res, next) => {
   console.error('Error global:', error);

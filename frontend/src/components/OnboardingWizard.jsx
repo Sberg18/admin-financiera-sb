@@ -26,11 +26,18 @@ const steps = [
   'Activos e Inversiones'
 ]
 
-const OnboardingWizard = ({ open, onClose }) => {
-  const [activeStep, setActiveStep] = useState(0)
+const OnboardingWizard = ({ open, onClose, initialStep = 0 }) => {
+  const [activeStep, setActiveStep] = useState(initialStep)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { user } = useAuth()
+
+  // Reset to initial step when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setActiveStep(initialStep)
+    }
+  }, [open, initialStep])
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1)

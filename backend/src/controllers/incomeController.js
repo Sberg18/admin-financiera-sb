@@ -34,17 +34,34 @@ const createIncome = async (req, res) => {
 
 const getIncomes = async (req, res) => {
   try {
-    const { month, year, page = 1, limit = 10 } = req.query;
+    const { month, year, startDate, endDate, page = 1, limit = 100 } = req.query;
     const offset = (page - 1) * limit;
     
     let whereClause = { userId: req.user.id };
     
+    // Filtro por mes y año específico
     if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0);
+      const start = new Date(year, month - 1, 1);
+      const end = new Date(year, month, 0);
       
       whereClause.incomeDate = {
-        [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
+        [Op.between]: [start.toISOString().split('T')[0], end.toISOString().split('T')[0]]
+      };
+    }
+    // Filtro por rango de fechas
+    else if (startDate && endDate) {
+      whereClause.incomeDate = {
+        [Op.between]: [startDate, endDate]
+      };
+    }
+    // Si no hay filtros, mostrar los últimos 3 meses por defecto
+    else if (!month && !year && !startDate && !endDate) {
+      const today = new Date();
+      const threeMonthsAgo = new Date(today);
+      threeMonthsAgo.setMonth(today.getMonth() - 3);
+      
+      whereClause.incomeDate = {
+        [Op.gte]: threeMonthsAgo.toISOString().split('T')[0]
       };
     }
 
@@ -104,8 +121,40 @@ const deleteIncome = async (req, res) => {
   }
 };
 
+const updateIncome = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const income = await Income.findOne({
+      where: { id, userId: req.user.id }
+    });
+    
+    if (!income) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ingreso no encontrado'
+      });
+    }
+
+    await income.update(req.body);
+
+    res.json({
+      success: true,
+      message: 'Ingreso actualizado exitosamente',
+      income
+    });
+  } catch (error) {
+    console.error('Update income error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   createIncome,
   getIncomes,
+  updateIncome,
   deleteIncome
 };

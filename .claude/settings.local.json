@@ -7,7 +7,11 @@
       "Bash(npm install:*)",
       "Bash(docker-compose restart:*)",
       "Bash(rm:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm run migrate:*)",
+      "Bash(npx sequelize-cli:*)",
+      "Bash(node:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": []
   }

@@ -16,6 +16,7 @@ import {
   Add as AddIcon
 } from '@mui/icons-material'
 import { useQuery } from 'react-query'
+import dayjs from 'dayjs'
 import api from '../services/api'
 import AddIncomeModal from './AddIncomeModal'
 import AddExpenseModal from './AddExpenseModal'
@@ -27,18 +28,22 @@ const FinancialSummary = () => {
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
   const [assetModalOpen, setAssetModalOpen] = useState(false)
   const [balanceModalOpen, setBalanceModalOpen] = useState(false)
+  // Obtener datos del mes actual
+  const currentYear = dayjs().year()
+  const currentMonth = dayjs().month() + 1
+
   const { data: expenses } = useQuery(
-    ['expenses'],
+    ['expenses-current-month', currentYear, currentMonth],
     async () => {
-      const response = await api.get('/expenses')
+      const response = await api.get(`/expenses?year=${currentYear}&month=${currentMonth}`)
       return response.expenses || []
     }
   )
 
   const { data: incomes } = useQuery(
-    ['incomes'],
+    ['incomes-current-month', currentYear, currentMonth],
     async () => {
-      const response = await api.get('/incomes')
+      const response = await api.get(`/incomes?year=${currentYear}&month=${currentMonth}`)
       return response.incomes || []
     }
   )
@@ -106,7 +111,7 @@ const FinancialSummary = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} md={3}>
           <SummaryCard
-            title="Total Ingresos"
+            title={`Ingresos ${dayjs().format('MMMM YYYY')}`}
             amount={totalIncomes}
             color="success.main"
             icon={TrendingUp}
@@ -117,7 +122,7 @@ const FinancialSummary = () => {
         
         <Grid item xs={12} md={3}>
           <SummaryCard
-            title="Total Gastos"
+            title={`Gastos ${dayjs().format('MMMM YYYY')}`}
             amount={totalExpenses}
             color="error.main"
             icon={TrendingDown}
@@ -128,7 +133,7 @@ const FinancialSummary = () => {
         
         <Grid item xs={12} md={3}>
           <SummaryCard
-            title="Balance Mensual"
+            title={`Balance ${dayjs().format('MMMM YYYY')}`}
             amount={balance}
             color={balance >= 0 ? "success.main" : "error.main"}
             icon={AccountBalance}

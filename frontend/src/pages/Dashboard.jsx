@@ -8,9 +8,9 @@ import {
   Tab,
   Card,
   CardContent,
-  Fab
+  Button,
 } from '@mui/material'
-import { Add as AddIcon } from '@mui/icons-material'
+import { Add as AddIcon, TrendingUp, TrendingDown, CreditCard } from '@mui/icons-material'
 import ExpenseList from '../components/ExpenseList'
 import IncomeList from '../components/IncomeList'
 import AssetsList from '../components/AssetsList'
@@ -19,7 +19,9 @@ import MonthlyView from './MonthlyView'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
 import AddAssetModal from '../components/AddAssetModal'
-import FinancialSummary from '../components/FinancialSummary'
+import ManageCreditCardsModal from '../components/ManageCreditCardsModal'
+import { useQuery, useQueryClient } from 'react-query'
+import api from '../services/api'
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -40,26 +42,65 @@ function TabPanel({ children, value, index, ...other }) {
 }
 
 const Dashboard = () => {
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState(0)
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
   const [incomeModalOpen, setIncomeModalOpen] = useState(false)
   const [assetModalOpen, setAssetModalOpen] = useState(false)
+  const [manageCreditCardsModalOpen, setManageCreditCardsModalOpen] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null)
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue)
   }
 
+  // Escuchar eventos de navegación desde MonthlyView
+  React.useEffect(() => {
+    const handleNavigateToCategory = (event) => {
+      const { categoryId, tab } = event.detail
+      setSelectedCategoryId(categoryId)
+      setActiveTab(tab) // Cambiar a la pestaña de Resumen por Categorías
+    }
+
+    window.addEventListener('navigateToCategory', handleNavigateToCategory)
+    return () => window.removeEventListener('navigateToCategory', handleNavigateToCategory)
+  }, [])
+
+
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard Financiero
-      </Typography>
-
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12}>
-          <FinancialSummary />
-        </Grid>
-      </Grid>
+      <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Typography variant="h4">
+          Dashboard Financiero
+        </Typography>
+        
+        <Box display="flex" gap={2}>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<TrendingDown />}
+            onClick={() => setExpenseModalOpen(true)}
+          >
+            Agregar Gasto
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<TrendingUp />}
+            onClick={() => setIncomeModalOpen(true)}
+          >
+            Agregar Ingreso
+          </Button>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<CreditCard />}
+            onClick={() => setManageCreditCardsModalOpen(true)}
+          >
+            Gestionar Tarjetas
+          </Button>
+        </Box>
+      </Box>
 
       <Paper sx={{ width: '100%' }}>
         <Tabs
@@ -80,7 +121,7 @@ const Dashboard = () => {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          <CategorySummary />
+          <CategorySummary selectedCategoryId={selectedCategoryId} />
         </TabPanel>
 
         <TabPanel value={activeTab} index={2}>
@@ -96,28 +137,6 @@ const Dashboard = () => {
         </TabPanel>
       </Paper>
 
-      <Fab
-        color="primary"
-        aria-label="add"
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        onClick={() => {
-          if (activeTab === 0) {
-            // Vista mensual - mostrar ambas opciones o default a gasto
-            setExpenseModalOpen(true)
-          } else if (activeTab === 1) {
-            // Resumen por categorías - agregar gasto
-            setExpenseModalOpen(true)
-          } else if (activeTab === 2) {
-            setExpenseModalOpen(true)
-          } else if (activeTab === 3) {
-            setIncomeModalOpen(true)
-          } else {
-            setAssetModalOpen(true)
-          }
-        }}
-      >
-        <AddIcon />
-      </Fab>
 
       <AddExpenseModal
         open={expenseModalOpen}
@@ -132,6 +151,11 @@ const Dashboard = () => {
       <AddAssetModal
         open={assetModalOpen}
         onClose={() => setAssetModalOpen(false)}
+      />
+
+      <ManageCreditCardsModal
+        open={manageCreditCardsModalOpen}
+        onClose={() => setManageCreditCardsModalOpen(false)}
       />
     </Box>
   )

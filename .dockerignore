@@ -1,0 +1,28 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.nyc_output
+coverage
+.docker
+.DS_Store
+*.log
+dist
+build
+
+# Frontend specific
+frontend/node_modules
+frontend/dist
+frontend/.env
+
+# Backend specific  
+backend/node_modules
+backend/logs
+backend/.env
+
+# Docker files
+docker-compose.yml
+*/Dockerfile
+Dockerfile

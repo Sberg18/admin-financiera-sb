@@ -19,7 +19,13 @@ import {
   Chip,
   IconButton,
   Fab,
-  Divider
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -30,41 +36,68 @@ import {
   CreditCard,
   AccountBalance
 } from '@mui/icons-material'
-import { useQuery } from 'react-query'
+import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
 import api from '../services/api'
+import DateFilter from '../components/DateFilter'
+import EditExpenseModal from '../components/EditExpenseModal'
+import EditIncomeModal from '../components/EditIncomeModal'
+import AddExpenseModal from '../components/AddExpenseModal'
+import AddIncomeModal from '../components/AddIncomeModal'
 
 const MonthlyView = () => {
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'))
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState('income')
+  const queryClient = useQueryClient()
+  const [dateFilter, setDateFilter] = useState(null)
+  const [editExpenseModalOpen, setEditExpenseModalOpen] = useState(false)
+  const [editIncomeModalOpen, setEditIncomeModalOpen] = useState(false)
+  const [addExpenseModalOpen, setAddExpenseModalOpen] = useState(false)
+  const [addIncomeModalOpen, setAddIncomeModalOpen] = useState(false)
+  const [editCardModalOpen, setEditCardModalOpen] = useState(false)
+  const [selectedExpense, setSelectedExpense] = useState(null)
+  const [selectedIncome, setSelectedIncome] = useState(null)
+  const [selectedCard, setSelectedCard] = useState(null)
 
-  // Queries para obtener datos del mes seleccionado
+  // Queries para obtener datos del periodo seleccionado
   const { data: monthlyExpenses, isLoading: loadingExpenses } = useQuery(
-    ['expenses', selectedMonth],
+    ['expenses', dateFilter],
     async () => {
-      const [year, month] = selectedMonth.split('-')
-      const response = await api.get(`/expenses?year=${year}&month=${month}`)
+      if (!dateFilter) return []
+      
+      let url = '/expenses'
+      if (dateFilter.type === 'monthly') {
+        url = `/expenses?year=${dateFilter.year}&month=${dateFilter.month}`
+      } else if (dateFilter.type === 'range') {
+        url = `/expenses?startDate=${dateFilter.startDate}&endDate=${dateFilter.endDate}`
+      }
+      
+      const response = await api.get(url)
       return response.expenses || []
+    },
+    {
+      enabled: !!dateFilter
     }
   )
 
   const { data: monthlyIncomes, isLoading: loadingIncomes } = useQuery(
-    ['incomes', selectedMonth],
+    ['incomes', dateFilter],
     async () => {
-      const [year, month] = selectedMonth.split('-')
-      const response = await api.get(`/incomes?year=${year}&month=${month}`)
+      if (!dateFilter) return []
+      
+      let url = '/incomes'
+      if (dateFilter.type === 'monthly') {
+        url = `/incomes?year=${dateFilter.year}&month=${dateFilter.month}`
+      } else if (dateFilter.type === 'range') {
+        url = `/incomes?startDate=${dateFilter.startDate}&endDate=${dateFilter.endDate}`
+      }
+      
+      const response = await api.get(url)
       return response.incomes || []
+    },
+    {
+      enabled: !!dateFilter
     }
   )
 
-  const { data: expenseCategories } = useQuery(
-    ['expense-categories'],
-    async () => {
-      const response = await api.get('/categories/expenses')
-      return response.categories || []
-    }
-  )
 
   const { data: creditCards } = useQuery(
     ['creditCards'],
@@ -74,12 +107,14 @@ const MonthlyView = () => {
     }
   )
 
-  // Agrupar gastos según tu estructura del Excel
+  // Agrupar gastos dinámicamente por todas las tarjetas
+  const creditCardExpenses = creditCards?.map(card => ({
+    card,
+    expenses: monthlyExpenses?.filter(e => e.creditCardId === card.id) || []
+  })) || []
+
   const groupedExpenses = {
-    visa: monthlyExpenses?.filter(e => e.creditCard?.cardType === 'Visa') || [],
-    amex: monthlyExpenses?.filter(e => e.creditCard?.cardType === 'American Express') || [],
-    efectivo: monthlyExpenses?.filter(e => e.paymentMethod === 'cash') || [],
-    servicios: monthlyExpenses?.filter(e => e.category?.name === 'Impuestos y Servicios') || []
+    efectivo: monthlyExpenses?.filter(e => e.paymentMethod === 'cash') || []
   }
 
   // Calcular totales
@@ -87,20 +122,88 @@ const MonthlyView = () => {
   const totalExpenses = monthlyExpenses?.reduce((sum, expense) => sum + parseFloat(expense.amount), 0) || 0
   const balance = totalIncomes - totalExpenses
 
+  const handleEditExpense = (expense) => {
+    setSelectedExpense(expense)
+    setEditExpenseModalOpen(true)
+  }
+
+  const handleDeleteExpense = async (id) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
+      try {
+        await api.delete(`/expenses/${id}`)
+        queryClient.invalidateQueries(['expenses'])
+        queryClient.invalidateQueries(['expenses-current-month'])
+        queryClient.invalidateQueries(['incomes'])
+      } catch (error) {
+        console.error('Error deleting expense:', error)
+      }
+    }
+  }
+
+  const handleEditIncome = (income) => {
+    setSelectedIncome(income)
+    setEditIncomeModalOpen(true)
+  }
+
+  const handleDeleteIncome = async (id) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este ingreso?')) {
+      try {
+        await api.delete(`/incomes/${id}`)
+        queryClient.invalidateQueries(['incomes'])
+        queryClient.invalidateQueries(['incomes-current-month'])
+        queryClient.invalidateQueries(['expenses'])
+      } catch (error) {
+        console.error('Error deleting income:', error)
+      }
+    }
+  }
+
+  const handleEditCard = (card) => {
+    setSelectedCard(card)
+    setEditCardModalOpen(true)
+  }
+
+  const handleViewCategorySummary = () => {
+    // Navegar a la pestaña de "Resumen por Categorías"
+    window.dispatchEvent(new CustomEvent('navigateToCategory', { detail: { tab: 1 } }))
+  }
+
   const getPaymentMethodColor = (method, cardType) => {
     if (method === 'credit_card') {
-      return cardType === 'Visa' ? 'primary' : cardType === 'American Express' ? 'secondary' : 'default'
+      return cardType?.name === 'Visa' ? 'primary' : cardType?.name === 'American Express' ? 'secondary' : 'default'
     }
     return method === 'cash' ? 'success' : 'info'
   }
 
-  const CategorySection = ({ title, items, color, icon: Icon, type }) => (
+  const CategorySection = ({ title, items, color, icon: Icon, type, cardInfo }) => (
     <Card sx={{ mb: 2 }}>
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
           <Box display="flex" alignItems="center" gap={1}>
             <Icon sx={{ color: color }} />
-            <Typography variant="h6">{title}</Typography>
+            <Box>
+              <Typography variant="h6">{title}</Typography>
+              {cardInfo && (
+                <Box display="flex" gap={1} mt={0.5}>
+                  <Chip 
+                    label={`Cierre: ${cardInfo.closingDay || 'N/A'}`}
+                    size="small"
+                    variant="outlined"
+                    clickable
+                    onClick={() => handleEditCard(cardInfo)}
+                    sx={{ fontSize: '0.7rem', height: '20px', cursor: 'pointer' }}
+                  />
+                  <Chip 
+                    label={`Vto: ${cardInfo.paymentDay || 'N/A'}`}
+                    size="small"
+                    variant="outlined"
+                    clickable
+                    onClick={() => handleEditCard(cardInfo)}
+                    sx={{ fontSize: '0.7rem', height: '20px', cursor: 'pointer' }}
+                  />
+                </Box>
+              )}
+            </Box>
             <Chip 
               label={`$${items.reduce((sum, item) => sum + parseFloat(item.amount), 0).toLocaleString()}`}
               color={type === 'income' ? 'success' : 'error'}
@@ -110,8 +213,11 @@ const MonthlyView = () => {
           <IconButton 
             color="primary" 
             onClick={() => {
-              setSelectedCategory(type)
-              setShowAddModal(true)
+              if (type === 'income') {
+                setAddIncomeModalOpen(true)
+              } else {
+                setAddExpenseModalOpen(true)
+              }
             }}
           >
             <AddIcon />
@@ -133,7 +239,13 @@ const MonthlyView = () => {
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
-                    {dayjs(item[type === 'income' ? 'incomeDate' : 'expenseDate']).format('DD/MM')}
+                    {type === 'income' ? (
+                      dayjs(item.incomeDate).format('DD/MM')
+                    ) : (
+                      <Typography variant="body2" fontSize="0.8rem">
+                        Compra: {dayjs(item.expenseDate).format('DD/MM')}
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>{item.description}</TableCell>
                   <TableCell align="right">
@@ -161,10 +273,18 @@ const MonthlyView = () => {
                     </TableCell>
                   )}
                   <TableCell align="center">
-                    <IconButton size="small" color="primary">
+                    <IconButton 
+                      size="small" 
+                      color="primary"
+                      onClick={() => type === 'expense' ? handleEditExpense(item) : handleEditIncome(item)}
+                    >
                       <EditIcon fontSize="small" />
                     </IconButton>
-                    <IconButton size="small" color="error">
+                    <IconButton 
+                      size="small" 
+                      color="error"
+                      onClick={() => type === 'expense' ? handleDeleteExpense(item.id) : handleDeleteIncome(item.id)}
+                    >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
@@ -188,30 +308,14 @@ const MonthlyView = () => {
 
   return (
     <Box>
-      {/* Header con selector de mes */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-        <Typography variant="h4" gutterBottom>
-          Vista Mensual Detallada
-        </Typography>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Mes</InputLabel>
-          <Select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            label="Mes"
-          >
-            {Array.from({ length: 12 }, (_, i) => {
-              const date = dayjs().month(i)
-              const value = date.format('YYYY-MM')
-              return (
-                <MenuItem key={value} value={value}>
-                  {date.format('MMMM YYYY')}
-                </MenuItem>
-              )
-            })}
-          </Select>
-        </FormControl>
-      </Box>
+      <Typography variant="h4" gutterBottom>
+        Vista Detallada por Período
+      </Typography>
+      
+      <DateFilter
+        onDateChange={setDateFilter}
+        title="Seleccionar Período"
+      />
 
       {/* Resumen del mes */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -277,7 +381,7 @@ const MonthlyView = () => {
         {/* Columna de Ingresos */}
         <Grid item xs={12} md={6}>
           <CategorySection
-            title="Ingreso Mensual"
+            title="Ingresos Mensuales"
             items={monthlyIncomes || []}
             color="success.main"
             icon={TrendingUp}
@@ -287,23 +391,18 @@ const MonthlyView = () => {
 
         {/* Columna de Gastos */}
         <Grid item xs={12} md={6}>
-          {/* Tarjeta VISA */}
-          <CategorySection
-            title="Tarjeta VISA"
-            items={groupedExpenses.visa}
-            color="primary.main"
-            icon={CreditCard}
-            type="expense"
-          />
-
-          {/* Tarjeta AMEX */}
-          <CategorySection
-            title="Tarjeta AMEX"
-            items={groupedExpenses.amex}
-            color="secondary.main"
-            icon={CreditCard}
-            type="expense"
-          />
+          {/* Tarjetas de Crédito - Dinámico */}
+          {creditCardExpenses.map((cardData, index) => (
+            <CategorySection
+              key={cardData.card.id}
+              title={`${cardData.card.cardType?.name || 'Tarjeta'} - ${cardData.card.bank?.name} ****${cardData.card.lastFourDigits}`}
+              items={cardData.expenses}
+              color={index % 3 === 0 ? 'primary.main' : index % 3 === 1 ? 'secondary.main' : 'info.main'}
+              icon={CreditCard}
+              type="expense"
+              cardInfo={cardData.card}
+            />
+          ))}
 
           {/* Efectivo */}
           <CategorySection
@@ -313,17 +412,110 @@ const MonthlyView = () => {
             icon={AccountBalance}
             type="expense"
           />
+          
+          {/* Botón para ver resumen por categorías */}
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="center" p={2}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  onClick={handleViewCategorySummary}
+                  startIcon={<AccountBalance />}
+                  fullWidth
+                >
+                  Ver Resumen por Categorías
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
 
-          {/* Impuestos y Servicios */}
-          <CategorySection
-            title="Impuestos y Servicios"
-            items={groupedExpenses.servicios}
-            color="warning.main"
-            icon={AccountBalance}
-            type="expense"
-          />
         </Grid>
       </Grid>
+
+      <EditExpenseModal
+        open={editExpenseModalOpen}
+        onClose={() => {
+          setEditExpenseModalOpen(false)
+          setSelectedExpense(null)
+        }}
+        expense={selectedExpense}
+      />
+
+      <EditIncomeModal
+        open={editIncomeModalOpen}
+        onClose={() => {
+          setEditIncomeModalOpen(false)
+          setSelectedIncome(null)
+        }}
+        income={selectedIncome}
+      />
+
+      <AddExpenseModal
+        open={addExpenseModalOpen}
+        onClose={() => setAddExpenseModalOpen(false)}
+      />
+
+      <AddIncomeModal
+        open={addIncomeModalOpen}
+        onClose={() => setAddIncomeModalOpen(false)}
+      />
+
+      {/* Modal para editar fechas de tarjeta */}
+      <Dialog open={editCardModalOpen} onClose={() => setEditCardModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Editar Fechas de Tarjeta</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              {selectedCard?.cardName}
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Día de Cierre"
+                  type="number"
+                  value={selectedCard?.closingDay || ''}
+                  onChange={(e) => setSelectedCard({...selectedCard, closingDay: parseInt(e.target.value)})}
+                  InputProps={{ inputProps: { min: 1, max: 31 } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Día de Vencimiento"
+                  type="number"
+                  value={selectedCard?.paymentDay || ''}
+                  onChange={(e) => setSelectedCard({...selectedCard, paymentDay: parseInt(e.target.value)})}
+                  InputProps={{ inputProps: { min: 1, max: 31 } }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditCardModalOpen(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              try {
+                await api.put(`/onboarding/credit-cards/${selectedCard.id}`, {
+                  closingDay: selectedCard.closingDay,
+                  paymentDay: selectedCard.paymentDay
+                })
+                queryClient.invalidateQueries(['creditCards'])
+                setEditCardModalOpen(false)
+              } catch (error) {
+                console.error('Error updating card:', error)
+              }
+            }}
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   )
 }

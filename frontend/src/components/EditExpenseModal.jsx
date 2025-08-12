@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -18,13 +18,13 @@ import {
   Box,
   Chip
 } from '@mui/material'
-import { Add as AddIcon, Palette } from '@mui/icons-material'
+import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
 import api from '../services/api'
 
-const AddExpenseModal = ({ open, onClose }) => {
+const EditExpenseModal = ({ open, onClose, expense }) => {
   const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -51,6 +51,22 @@ const AddExpenseModal = ({ open, onClose }) => {
     '#9C27B0', '#00BCD4', '#795548', '#607D8B'
   ]
 
+  // Cargar datos del gasto cuando se abre el modal
+  useEffect(() => {
+    if (expense) {
+      setFormData({
+        amount: expense.amount?.toString() || '',
+        description: expense.description || '',
+        expenseDate: expense.expenseDate ? dayjs(expense.expenseDate) : dayjs(),
+        paymentMethod: expense.paymentMethod || 'cash',
+        installments: expense.installments || 1,
+        creditCardId: expense.creditCardId || '',
+        categoryId: expense.categoryId || '',
+        paymentDate: expense.paymentDate ? dayjs(expense.paymentDate) : null
+      })
+    }
+  }, [expense])
+
   const { data: creditCards } = useQuery(
     ['creditCards'],
     async () => {
@@ -67,7 +83,6 @@ const AddExpenseModal = ({ open, onClose }) => {
     }
   )
 
-  // Función para calcular la fecha de pago de la tarjeta
   const calculatePaymentDate = (expenseDate, creditCard) => {
     if (!creditCard || !expenseDate) return expenseDate
     
@@ -75,11 +90,9 @@ const AddExpenseModal = ({ open, onClose }) => {
     const closingDay = creditCard.closingDay || 31
     const paymentDay = creditCard.paymentDay || 10
     
-    // Determinar el mes de cierre
     let closingMonth = expenseDateObj.month()
     let closingYear = expenseDateObj.year()
     
-    // Si la compra es después del día de cierre, va al cierre del mes siguiente
     if (expenseDateObj.date() > closingDay) {
       closingMonth += 1
       if (closingMonth > 11) {
@@ -88,7 +101,6 @@ const AddExpenseModal = ({ open, onClose }) => {
       }
     }
     
-    // La fecha de pago es el día de pago del mes siguiente al cierre
     let paymentMonth = closingMonth + 1
     let paymentYear = closingYear
     
@@ -97,7 +109,6 @@ const AddExpenseModal = ({ open, onClose }) => {
       paymentYear += 1
     }
     
-    // Crear fecha de pago
     const paymentDate = dayjs()
       .year(paymentYear)
       .month(paymentMonth)
@@ -113,7 +124,6 @@ const AddExpenseModal = ({ open, onClose }) => {
       [field]: newValue
     }
     
-    // Si cambió el método de pago a tarjeta de crédito, calcular fecha de pago
     if (field === 'paymentMethod' && newValue === 'credit_card' && formData.creditCardId) {
       const selectedCard = creditCards?.find(card => card.id === formData.creditCardId)
       if (selectedCard) {
@@ -122,7 +132,6 @@ const AddExpenseModal = ({ open, onClose }) => {
       }
     }
     
-    // Si cambió la tarjeta de crédito o la fecha, recalcular fecha de pago
     if ((field === 'creditCardId' || field === 'expenseDate') && 
         (formData.paymentMethod === 'credit_card' || (field === 'paymentMethod' && newValue === 'credit_card'))) {
       const selectedCard = creditCards?.find(card => card.id === (field === 'creditCardId' ? newValue : formData.creditCardId))
@@ -133,7 +142,6 @@ const AddExpenseModal = ({ open, onClose }) => {
       }
     }
     
-    // Si cambió el método de pago a algo distinto de tarjeta, limpiar fecha de pago
     if (field === 'paymentMethod' && newValue !== 'credit_card') {
       newFormData.paymentDate = null
     }
@@ -146,16 +154,13 @@ const AddExpenseModal = ({ open, onClose }) => {
       setLoading(true)
       const response = await api.post('/categories/expenses', newCategory)
       
-      // Actualizar la lista de categorías
       queryClient.invalidateQueries(['expense-categories'])
       
-      // Seleccionar automáticamente la nueva categoría
       setFormData({
         ...formData,
         categoryId: response.category.id
       })
       
-      // Resetear formulario de categoría
       setNewCategory({ name: '', color: '#2196F3' })
       setShowNewCategoryForm(false)
       
@@ -182,7 +187,7 @@ const AddExpenseModal = ({ open, onClose }) => {
         submitData.installments = 1
       }
 
-      await api.post('/expenses', submitData)
+      await api.put(`/expenses/${expense.id}`, submitData)
       
       queryClient.invalidateQueries(['expenses'])
       queryClient.invalidateQueries(['expenses-current-month'])
@@ -190,21 +195,9 @@ const AddExpenseModal = ({ open, onClose }) => {
       queryClient.invalidateQueries(['expense-categories'])
       queryClient.invalidateQueries(['creditCards'])
       
-      // Reset form
-      setFormData({
-        amount: '',
-        description: '',
-        expenseDate: dayjs(),
-        paymentMethod: 'cash',
-        installments: 1,
-        creditCardId: '',
-        categoryId: '',
-        paymentDate: null
-      })
-      
       onClose()
     } catch (error) {
-      setError(error.response?.data?.message || 'Error al crear el gasto')
+      setError(error.response?.data?.message || 'Error al actualizar el gasto')
     } finally {
       setLoading(false)
     }
@@ -212,7 +205,14 @@ const AddExpenseModal = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
+      <DialogTitle>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          Editar Gasto
+          <IconButton onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -293,7 +293,6 @@ const AddExpenseModal = ({ open, onClose }) => {
             </Box>
           </Grid>
           
-          {/* Formulario para nueva categoría */}
           {showNewCategoryForm && (
             <>
               <Grid item xs={12}>
@@ -432,11 +431,11 @@ const AddExpenseModal = ({ open, onClose }) => {
           variant="contained"
           disabled={loading || !formData.amount || !formData.description}
         >
-          {loading ? <CircularProgress size={20} /> : 'Guardar'}
+          {loading ? <CircularProgress size={20} /> : 'Actualizar'}
         </Button>
       </DialogActions>
     </Dialog>
   )
 }
 
-export default AddExpenseModal
+export default EditExpenseModal

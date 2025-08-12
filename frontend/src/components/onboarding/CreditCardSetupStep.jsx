@@ -26,14 +26,46 @@ const CreditCardSetupStep = ({ onNext }) => {
   const [creditCards, setCreditCards] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Función para obtener el último viernes del mes
+  const getLastFridayOfMonth = (date = new Date()) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const lastDay = new Date(year, month + 1, 0) // Último día del mes
+    
+    // Encontrar el último viernes
+    let lastFriday = lastDay
+    while (lastFriday.getDay() !== 5) { // 5 = viernes
+      lastFriday.setDate(lastFriday.getDate() - 1)
+    }
+    return lastFriday.getDate()
+  }
+
+  // Función para obtener el segundo lunes del mes siguiente
+  const getSecondMondayOfNextMonth = (date = new Date()) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDayNextMonth = new Date(year, month + 1, 1)
+    
+    // Encontrar el primer lunes
+    let firstMonday = firstDayNextMonth
+    while (firstMonday.getDay() !== 1) { // 1 = lunes
+      firstMonday.setDate(firstMonday.getDate() + 1)
+    }
+    
+    // El segundo lunes es 7 días después
+    const secondMonday = new Date(firstMonday)
+    secondMonday.setDate(firstMonday.getDate() + 7)
+    return secondMonday.getDate()
+  }
   
   const [formData, setFormData] = useState({
     bankId: '',
     cardTypeId: 1, // Visa por defecto
     cardName: '',
     lastFourDigits: '',
-    closingDay: 31,
-    paymentDay: 10,
+    closingDay: getLastFridayOfMonth(),
+    paymentDay: getSecondMondayOfNextMonth(),
     creditLimit: ''
   })
 
@@ -81,8 +113,8 @@ const CreditCardSetupStep = ({ onNext }) => {
         cardTypeId: 1,
         cardName: '',
         lastFourDigits: '',
-        closingDay: 31,
-        paymentDay: 10,
+        closingDay: getLastFridayOfMonth(),
+        paymentDay: getSecondMondayOfNextMonth(),
         creditLimit: ''
       })
     } catch (error) {
@@ -119,8 +151,10 @@ const CreditCardSetupStep = ({ onNext }) => {
         Registra tus tarjetas de crédito para un mejor control de gastos y cuotas.
       </Typography>
       <Alert severity="info" sx={{ mb: 2 }}>
-        💡 <strong>Días por defecto:</strong> Si no conoces las fechas exactas, no te preocupes. 
-        Usaremos día de cierre <strong>31</strong> y día de pago <strong>10</strong> como valores por defecto.
+        📅 <strong>Fechas calculadas automáticamente:</strong><br/>
+        • <strong>Día de cierre:</strong> {getLastFridayOfMonth()} (último viernes del mes)<br/>
+        • <strong>Día de vencimiento:</strong> {getSecondMondayOfNextMonth()} (segundo lunes del mes siguiente)<br/>
+        <em>Puedes modificar estos valores si tu tarjeta tiene fechas diferentes.</em>
       </Alert>
 
       {error && (
