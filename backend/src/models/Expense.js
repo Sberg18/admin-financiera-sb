@@ -70,9 +70,9 @@ const Expense = sequelize.define('Expense', {
   updatedAt: false,
   hooks: {
     beforeCreate: (expense) => {
-      if (expense.installments > 1) {
-        expense.installmentAmount = (expense.amount / expense.installments).toFixed(2);
-      } else {
+      // Para cuotas, installmentAmount es igual al amount (ya viene calculado)
+      // Para pagos únicos, installmentAmount es igual al amount total
+      if (!expense.installmentAmount) {
         expense.installmentAmount = expense.amount;
       }
     }

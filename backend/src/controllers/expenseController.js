@@ -61,7 +61,6 @@ const createExpense = async (req, res) => {
           ...expenseData,
           amount: installmentAmount, // Usar el monto de la cuota, no el total
           currentInstallment: i,
-          installmentAmount: installmentAmount,
           expenseDate: expenseData.expenseDate, // Fecha de compra original
           paymentDate: installmentPaymentDate.toISOString().split('T')[0], // Fecha de vencimiento calculada
           description: `${expenseData.description} (Cuota ${i}/${expenseData.installments})`

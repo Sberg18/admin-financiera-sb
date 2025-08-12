@@ -139,18 +139,49 @@ const Dashboard = () => {
           </Box>
         )}
 
-        {/* Mobile menu button */}
+        {/* Mobile action buttons */}
         {isMobile && (
-          <IconButton
-            size="large"
-            onClick={handleMenuOpen}
-            sx={{ 
-              border: '1px solid',
-              borderColor: 'primary.main'
-            }}
-          >
-            <MoreVert />
-          </IconButton>
+          <Box display="flex" gap={0.5} flexWrap="wrap">
+            <Button
+              variant="contained"
+              color="error"
+              size={isSmallMobile ? "small" : "medium"}
+              startIcon={!isSmallMobile && <TrendingDown />}
+              onClick={() => setExpenseModalOpen(true)}
+              sx={{ 
+                fontSize: isSmallMobile ? '0.7rem' : '0.8rem',
+                px: isSmallMobile ? 1 : 1.5,
+                minWidth: isSmallMobile ? 'auto' : 'inherit'
+              }}
+            >
+              {isSmallMobile ? <TrendingDown /> : 'Gasto'}
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              size={isSmallMobile ? "small" : "medium"}
+              startIcon={!isSmallMobile && <TrendingUp />}
+              onClick={() => setIncomeModalOpen(true)}
+              sx={{ 
+                fontSize: isSmallMobile ? '0.7rem' : '0.8rem',
+                px: isSmallMobile ? 1 : 1.5,
+                minWidth: isSmallMobile ? 'auto' : 'inherit'
+              }}
+            >
+              {isSmallMobile ? <TrendingUp /> : 'Ingreso'}
+            </Button>
+            <IconButton
+              size="small"
+              onClick={handleMenuOpen}
+              sx={{ 
+                border: '1px solid',
+                borderColor: 'primary.main'
+              }}
+              title="Más opciones"
+            >
+              <MoreVert />
+            </IconButton>
+          </Box>
         )}
       </Box>
 
@@ -168,26 +199,6 @@ const Dashboard = () => {
           horizontal: 'right',
         }}
       >
-        <MenuItem 
-          onClick={() => {
-            setExpenseModalOpen(true)
-            handleMenuClose()
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <TrendingDown sx={{ mr: 2 }} />
-          Agregar Gasto
-        </MenuItem>
-        <MenuItem 
-          onClick={() => {
-            setIncomeModalOpen(true)
-            handleMenuClose()
-          }}
-          sx={{ color: 'success.main' }}
-        >
-          <TrendingUp sx={{ mr: 2 }} />
-          Agregar Ingreso
-        </MenuItem>
         <MenuItem 
           onClick={() => {
             setManageCreditCardsModalOpen(true)

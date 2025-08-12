@@ -76,16 +76,7 @@ const initializeData = async () => {
 
     // 4. Crear categorías por defecto de gastos
     const defaultExpenseCategories = [
-      { name: 'Sin Categoría', color: '#757575', userId: null },
-      { name: 'Alimentación', color: '#FF9800', userId: null },
-      { name: 'Transporte', color: '#2196F3', userId: null },
-      { name: 'Servicios', color: '#9C27B0', userId: null },
-      { name: 'Entretenimiento', color: '#E91E63', userId: null },
-      { name: 'Salud', color: '#4CAF50', userId: null },
-      { name: 'Educación', color: '#00BCD4', userId: null },
-      { name: 'Ropa y Calzado', color: '#795548', userId: null },
-      { name: 'Hogar', color: '#607D8B', userId: null },
-      { name: 'Impuestos', color: '#F44336', userId: null }
+      { name: 'Sin Categoría', color: '#757575', userId: null }
     ];
 
     for (const category of defaultExpenseCategories) {
@@ -98,14 +89,7 @@ const initializeData = async () => {
 
     // 5. Crear categorías por defecto de ingresos
     const defaultIncomeCategories = [
-      { name: 'Sin Categoría', color: '#757575', userId: null },
-      { name: 'Sueldo', color: '#4CAF50', userId: null },
-      { name: 'Freelance', color: '#8BC34A', userId: null },
-      { name: 'Inversiones', color: '#CDDC39', userId: null },
-      { name: 'Alquileres', color: '#FFC107', userId: null },
-      { name: 'Ventas', color: '#FF5722', userId: null },
-      { name: 'Bonos/Aguinaldo', color: '#009688', userId: null },
-      { name: 'Otros Ingresos', color: '#3F51B5', userId: null }
+      { name: 'Sin Categoría', color: '#757575', userId: null }
     ];
 
     for (const category of defaultIncomeCategories) {
