@@ -59,8 +59,8 @@ const initializeData = async () => {
       { name: 'ETFs', category: 'stocks' },
       { name: 'Bonos Soberanos', category: 'bonds' },
       { name: 'LELIQs', category: 'bonds' },
-      { name: 'FCI Renta Fija', category: 'funds' },
-      { name: 'FCI Renta Variable', category: 'funds' },
+      { name: 'FCI Renta Fija', category: 'bonds' },
+      { name: 'FCI Renta Variable', category: 'stocks' },
       { name: 'Crypto Bitcoin', category: 'crypto' },
       { name: 'Crypto Ethereum', category: 'crypto' },
       { name: 'Crypto Stablecoins', category: 'crypto' }
