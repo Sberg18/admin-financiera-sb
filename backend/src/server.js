@@ -99,6 +99,15 @@ const startServer = async () => {
     await sequelize.sync();
     console.log('✅ Modelos sincronizados con la base de datos');
     
+    // Ejecutar migración cardMode en producción
+    try {
+      const addCardModeColumn = require('./scripts/addCardModeColumn');
+      await addCardModeColumn();
+      console.log('✅ Migración cardMode completada');
+    } catch (migrationError) {
+      console.log('ℹ️ Migración cardMode ya aplicada o no necesaria:', migrationError.message);
+    }
+    
     // Inicializar datos básicos en producción
     if (process.env.NODE_ENV === 'production') {
       await initializeData();
