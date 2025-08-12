@@ -11,6 +11,7 @@ const expenseRoutes = require('./routes/expenses');
 const incomeRoutes = require('./routes/incomes');
 const onboardingRoutes = require('./routes/onboarding');
 const categoryRoutes = require('./routes/categories');
+const initializeData = require('./seeds/initializeData');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -89,6 +90,11 @@ const startServer = async () => {
     
     await sequelize.sync();
     console.log('✅ Modelos sincronizados con la base de datos');
+    
+    // Inicializar datos básicos en producción
+    if (process.env.NODE_ENV === 'production') {
+      await initializeData();
+    }
     
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en puerto ${PORT}`);

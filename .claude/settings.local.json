@@ -11,7 +11,8 @@
       "Bash(npm run migrate:*)",
       "Bash(npx sequelize-cli:*)",
       "Bash(node:*)",
-      "Bash(docker-compose:*)"
+      "Bash(docker-compose:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
