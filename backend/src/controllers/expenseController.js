@@ -92,9 +92,20 @@ const createExpense = async (req, res) => {
     }
   } catch (error) {
     console.error('Create expense error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      sql: error.sql || 'No SQL',
+      original: error.original || 'No original error'
+    });
     res.status(500).json({
       success: false,
-      message: 'Error interno del servidor'
+      message: 'Error interno del servidor',
+      ...(process.env.NODE_ENV === 'development' && { 
+        error: error.message,
+        stack: error.stack 
+      })
     });
   }
 };

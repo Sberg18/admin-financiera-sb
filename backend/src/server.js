@@ -12,6 +12,7 @@ const incomeRoutes = require('./routes/incomes');
 const onboardingRoutes = require('./routes/onboarding');
 const categoryRoutes = require('./routes/categories');
 const initializeData = require('./seeds/initializeData');
+const logger = require('./middleware/logger');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +36,11 @@ app.use(limiter);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Agregar logger detallado solo en producción o cuando se necesite debug
+if (process.env.ENABLE_DETAILED_LOGGING === 'true') {
+  app.use(logger);
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
