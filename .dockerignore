@@ -25,4 +25,8 @@ backend/.env
 # Docker files
 docker-compose.yml
 */Dockerfile
-Dockerfile
+
+# IMPORTANT: Don't ignore package-lock.json files
+!package-lock.json
+!frontend/package-lock.json
+!backend/package-lock.json
