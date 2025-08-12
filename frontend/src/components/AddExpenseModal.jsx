@@ -181,8 +181,10 @@ const AddExpenseModal = ({ open, onClose }) => {
         amount: parseFloat(formData.amount)
       }
 
-      if (submitData.paymentMethod !== 'credit_card') {
+      if (submitData.paymentMethod === 'cash') {
         delete submitData.creditCardId
+        submitData.installments = 1
+      } else if (submitData.paymentMethod === 'debit_card') {
         submitData.installments = 1
       }
 
