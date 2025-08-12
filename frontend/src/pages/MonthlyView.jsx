@@ -44,6 +44,7 @@ import EditExpenseModal from '../components/EditExpenseModal'
 import EditIncomeModal from '../components/EditIncomeModal'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
+import ExchangeRateDisplay from '../components/ExchangeRateDisplay'
 
 const MonthlyView = () => {
   const queryClient = useQueryClient()
@@ -324,13 +325,14 @@ const MonthlyView = () => {
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
                 <TrendingUp sx={{ fontSize: 40 }} />
-                <Box>
+                <Box sx={{ flex: 1 }}>
                   <Typography variant="h4">
                     ${totalIncomes.toLocaleString()}
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography variant="body1" sx={{ mb: 1 }}>
                     Ingreso Mensual
                   </Typography>
+                  <ExchangeRateDisplay arsAmount={totalIncomes} size="small" />
                 </Box>
               </Box>
             </CardContent>
@@ -342,13 +344,14 @@ const MonthlyView = () => {
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
                 <TrendingDown sx={{ fontSize: 40 }} />
-                <Box>
+                <Box sx={{ flex: 1 }}>
                   <Typography variant="h4">
                     ${totalExpenses.toLocaleString()}
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography variant="body1" sx={{ mb: 1 }}>
                     Gasto Mensual
                   </Typography>
+                  <ExchangeRateDisplay arsAmount={totalExpenses} size="small" />
                 </Box>
               </Box>
             </CardContent>
@@ -363,13 +366,14 @@ const MonthlyView = () => {
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
                 <AccountBalance sx={{ fontSize: 40 }} />
-                <Box>
+                <Box sx={{ flex: 1 }}>
                   <Typography variant="h4">
                     ${Math.abs(balance).toLocaleString()}
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography variant="body1" sx={{ mb: 1 }}>
                     {balance >= 0 ? '✅ Balance Positivo' : '⚠️ Balance Negativo'}
                   </Typography>
+                  <ExchangeRateDisplay arsAmount={Math.abs(balance)} size="small" showRefresh />
                 </Box>
               </Box>
             </CardContent>

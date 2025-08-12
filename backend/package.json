@@ -9,7 +9,9 @@
     "test": "jest",
     "migrate": "node src/scripts/runMigration.js",
     "check-db": "node src/scripts/checkDbStatus.js",
-    "postinstall": "npm run migrate"
+    "admin-users": "node src/scripts/adminUsers.js",
+    "delete-user": "node src/scripts/deleteUserData.js",
+    "clean-user": "node src/scripts/cleanUserData.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

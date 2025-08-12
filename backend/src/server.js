@@ -11,6 +11,7 @@ const expenseRoutes = require('./routes/expenses');
 const incomeRoutes = require('./routes/incomes');
 const onboardingRoutes = require('./routes/onboarding');
 const categoryRoutes = require('./routes/categories');
+const exchangeRateRoutes = require('./routes/exchangeRate');
 const initializeData = require('./seeds/initializeData');
 const logger = require('./middleware/logger');
 
@@ -47,6 +48,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/incomes', incomeRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/exchange-rate', exchangeRateRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({
