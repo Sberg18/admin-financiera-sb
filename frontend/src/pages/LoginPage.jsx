@@ -54,11 +54,30 @@ const LoginPage = () => {
         }}
       >
         <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom>
+          <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
+            <img 
+              src="/logo_arman.jpeg" 
+              alt="Arman Solutions Logo" 
+              style={{ 
+                height: '60px',
+                width: '60px',
+                borderRadius: '8px',
+                marginBottom: '16px'
+              }} 
+            />
+            <Typography component="h1" variant="h4" align="center" gutterBottom>
+              Arman Finance
+            </Typography>
+            <Typography variant="subtitle1" align="center" color="textSecondary">
+              Gestión Financiera Personal
+            </Typography>
+            <Typography variant="caption" align="center" color="textSecondary">
+              by Arman Solutions
+            </Typography>
+          </Box>
+          
+          <Typography variant="h6" align="center" gutterBottom sx={{ mt: 2, mb: 2 }}>
             Iniciar Sesión
-          </Typography>
-          <Typography variant="subtitle1" align="center" color="textSecondary" gutterBottom>
-            Administración Financiera Personal
           </Typography>
           
           {error && (

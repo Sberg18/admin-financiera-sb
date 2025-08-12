@@ -444,11 +444,20 @@ const AddExpenseModal = ({ open, onClose }) => {
         </Grid>
       </DialogContent>
       
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
+      <DialogActions sx={{ 
+        px: { xs: 2, sm: 3 },
+        pb: { xs: 2, sm: 2 }
+      }}>
+        <Button 
+          onClick={onClose}
+          color="inherit"
+        >
+          Cancelar
+        </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
+          color="primary"
           disabled={loading || !formData.amount || !formData.description}
         >
           {loading ? <CircularProgress size={20} /> : 'Guardar'}

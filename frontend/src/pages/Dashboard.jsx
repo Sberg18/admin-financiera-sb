@@ -129,7 +129,7 @@ const Dashboard = () => {
               Agregar Ingreso
             </Button>
             <Button
-              variant="outlined"
+              variant="contained"
               color="primary"
               startIcon={<CreditCard />}
               onClick={() => setManageCreditCardsModalOpen(true)}
