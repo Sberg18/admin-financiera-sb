@@ -28,17 +28,21 @@ router.post('/credit-cards', [
     .isLength({ min: 4, max: 4 })
     .withMessage('Deben ser 4 dígitos'),
   body('closingDay')
-    .optional({ nullable: true })
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1, max: 31 })
     .withMessage('Día de cierre debe estar entre 1 y 31'),
   body('paymentDay')
-    .optional({ nullable: true })
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1, max: 31 })
     .withMessage('Día de pago debe estar entre 1 y 31'),
   body('creditLimit')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isFloat({ min: 0 })
-    .withMessage('El límite de crédito debe ser positivo')
+    .withMessage('El límite de crédito debe ser positivo'),
+  body('cardMode')
+    .optional()
+    .isIn(['credit', 'debit'])
+    .withMessage('Modalidad debe ser credit o debit')
 ], onboardingController.addCreditCard);
 
 router.get('/credit-cards', onboardingController.getCreditCards);

@@ -70,13 +70,25 @@ const ExpenseList = () => {
     }
   }
 
-  const getPaymentMethodLabel = (method) => {
-    const labels = {
-      cash: 'Efectivo',
-      credit_card: 'Tarjeta de Crédito',
-      debit_card: 'Tarjeta de Débito'
+  const getPaymentMethodLabel = (expense) => {
+    if (expense.paymentMethod === 'cash') {
+      return 'Efectivo'
     }
-    return labels[method] || method
+    
+    if (expense.paymentMethod === 'credit_card' || expense.paymentMethod === 'debit_card') {
+      if (expense.creditCard) {
+        const cardType = expense.creditCard.cardType?.name || ''
+        // Usar cardMode si existe, sino deducir del paymentMethod
+        const cardMode = expense.creditCard.cardMode === 'debit' ? 'Débito' : 'Crédito'
+        const bankName = expense.creditCard.bank?.name || ''
+        const lastFour = expense.creditCard.lastFourDigits ? `****${expense.creditCard.lastFourDigits}` : ''
+        
+        return `${cardType} ${cardMode} ${bankName} ${lastFour}`.trim()
+      }
+      return expense.paymentMethod === 'credit_card' ? 'Tarjeta de Crédito' : 'Tarjeta de Débito'
+    }
+    
+    return expense.paymentMethod
   }
 
   const getPaymentMethodColor = (method) => {
@@ -145,7 +157,7 @@ const ExpenseList = () => {
                 
                 <Box display="flex" gap={1} mb={2} flexWrap="wrap">
                   <Chip
-                    label={getPaymentMethodLabel(expense.paymentMethod)}
+                    label={getPaymentMethodLabel(expense)}
                     color={getPaymentMethodColor(expense.paymentMethod)}
                     size="small"
                   />
@@ -230,7 +242,7 @@ const ExpenseList = () => {
                 </TableCell>
                 <TableCell>
                   <Chip
-                    label={getPaymentMethodLabel(expense.paymentMethod)}
+                    label={getPaymentMethodLabel(expense)}
                     color={getPaymentMethodColor(expense.paymentMethod)}
                     size="small"
                   />

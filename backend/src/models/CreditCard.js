@@ -52,6 +52,11 @@ const CreditCard = sequelize.define('CreditCard', {
   creditLimit: {
     type: DataTypes.DECIMAL(12, 2),
     field: 'credit_limit'
+  },
+  cardMode: {
+    type: DataTypes.ENUM('credit', 'debit'),
+    defaultValue: 'credit',
+    field: 'card_mode'
   }
 }, {
   tableName: 'credit_cards',

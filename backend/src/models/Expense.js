@@ -18,7 +18,8 @@ const Expense = sequelize.define('Expense', {
   },
   creditCardId: {
     type: DataTypes.INTEGER,
-    field: 'credit_card_id'
+    field: 'credit_card_id',
+    comment: 'ID de tarjeta (crédito o débito)'
   },
   amount: {
     type: DataTypes.DECIMAL(12, 2),

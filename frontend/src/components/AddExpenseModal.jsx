@@ -393,36 +393,48 @@ const AddExpenseModal = ({ open, onClose }) => {
             </FormControl>
           </Grid>
           
-          {formData.paymentMethod === 'credit_card' && (
+          {(formData.paymentMethod === 'credit_card' || formData.paymentMethod === 'debit_card') && (
             <>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
-                  <InputLabel>Tarjeta de Crédito</InputLabel>
+                  <InputLabel>
+                    {formData.paymentMethod === 'credit_card' ? 'Tarjeta de Crédito' : 'Tarjeta de Débito'}
+                  </InputLabel>
                   <Select
                     value={formData.creditCardId}
                     onChange={handleChange('creditCardId')}
-                    label="Tarjeta de Crédito"
+                    label={formData.paymentMethod === 'credit_card' ? 'Tarjeta de Crédito' : 'Tarjeta de Débito'}
                   >
-                    {creditCards?.map((card) => (
+                    {creditCards?.filter(card => {
+                      if (formData.paymentMethod === 'credit_card') {
+                        // Para crédito: mostrar tarjetas marcadas como crédito o las que no tienen cardMode (compatibilidad)
+                        return card.cardMode === 'credit' || !card.cardMode
+                      } else {
+                        // Para débito: solo mostrar las marcadas específicamente como débito
+                        return card.cardMode === 'debit'
+                      }
+                    }).map((card) => (
                       <MenuItem key={card.id} value={card.id}>
-                        {card.cardName} - {card.bank?.name} 
-                        {card.lastFourDigits && ` (**** ${card.lastFourDigits})`}
+                        {card.cardType?.name} {card.cardMode === 'debit' ? 'Débito' : 'Crédito'} {card.bank?.name} 
+                        {card.lastFourDigits && ` ****${card.lastFourDigits}`}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Cuotas"
-                  type="number"
-                  value={formData.installments}
-                  onChange={handleChange('installments')}
-                  inputProps={{ min: 1, max: 60 }}
-                  helperText="1 = pago único"
-                />
-              </Grid>
+              {formData.paymentMethod === 'credit_card' && (
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Cuotas"
+                    type="number"
+                    value={formData.installments}
+                    onChange={handleChange('installments')}
+                    inputProps={{ min: 1, max: 60 }}
+                    helperText="1 = pago único"
+                  />
+                </Grid>
+              )}
               
               {formData.paymentDate && (
                 <Grid item xs={12} sm={6}>

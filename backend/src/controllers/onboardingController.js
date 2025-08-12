@@ -52,21 +52,35 @@ const addCreditCard = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(error => `${error.param}: ${error.msg}`);
       return res.status(400).json({
         success: false,
-        message: 'Validation errors',
+        message: `Errores de validación: ${errorMessages.join(', ')}`,
         errors: errors.array()
       });
     }
 
-    const creditCard = await CreditCard.create({
-      ...req.body,
-      userId: req.user.id
-    });
+    // Validación específica para tarjetas de crédito
+    if (req.body.cardMode === 'credit' && !req.body.creditLimit) {
+      return res.status(400).json({
+        success: false,
+        message: 'El límite de crédito es obligatorio para tarjetas de crédito'
+      });
+    }
+
+    // Para tarjetas de débito, limpiar campos innecesarios
+    const cardData = { ...req.body, userId: req.user.id };
+    if (req.body.cardMode === 'debit') {
+      cardData.closingDay = null;
+      cardData.paymentDay = null;
+      cardData.creditLimit = null;
+    }
+
+    const creditCard = await CreditCard.create(cardData);
 
     res.status(201).json({
       success: true,
-      message: 'Tarjeta de crédito agregada exitosamente',
+      message: `Tarjeta de ${req.body.cardMode === 'debit' ? 'débito' : 'crédito'} agregada exitosamente`,
       creditCard
     });
   } catch (error) {

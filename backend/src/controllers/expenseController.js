@@ -3,8 +3,12 @@ const { Expense, CreditCard, Bank, CardType } = require('../models');
 const { Op } = require('sequelize');
 
 const calculatePaymentDate = (expenseDate, paymentMethod, creditCard) => {
-  if (paymentMethod !== 'credit_card' || !creditCard) {
+  if (paymentMethod === 'cash' || (paymentMethod === 'debit_card' && (!creditCard || creditCard.cardMode === 'debit'))) {
     // Para efectivo y débito, la fecha de pago es la misma que la fecha de gasto
+    return expenseDate;
+  }
+  
+  if (paymentMethod !== 'credit_card' || !creditCard) {
     return expenseDate;
   }
 
@@ -36,8 +40,13 @@ const createExpense = async (req, res) => {
     }
 
     let creditCard = null;
-    if (req.body.paymentMethod === 'credit_card' && req.body.creditCardId) {
-      creditCard = await CreditCard.findByPk(req.body.creditCardId);
+    if ((req.body.paymentMethod === 'credit_card' || req.body.paymentMethod === 'debit_card') && req.body.creditCardId) {
+      creditCard = await CreditCard.findByPk(req.body.creditCardId, {
+        include: [
+          { model: Bank, as: 'bank' },
+          { model: CardType, as: 'cardType' }
+        ]
+      });
     }
 
     const expenseData = {
@@ -240,8 +249,13 @@ const updateExpense = async (req, res) => {
     }
 
     let creditCard = null;
-    if (req.body.paymentMethod === 'credit_card' && req.body.creditCardId) {
-      creditCard = await CreditCard.findByPk(req.body.creditCardId);
+    if ((req.body.paymentMethod === 'credit_card' || req.body.paymentMethod === 'debit_card') && req.body.creditCardId) {
+      creditCard = await CreditCard.findByPk(req.body.creditCardId, {
+        include: [
+          { model: Bank, as: 'bank' },
+          { model: CardType, as: 'cardType' }
+        ]
+      });
     }
 
     const updateData = {

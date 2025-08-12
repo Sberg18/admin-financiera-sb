@@ -68,20 +68,20 @@ const CategorySummary = ({ selectedCategoryId }) => {
   const { data: monthlyExpenses, isLoading } = useQuery(
     ['expenses-summary', dateFilter],
     async () => {
-      if (!dateFilter) return []
-      
       let url = '/expenses'
-      if (dateFilter.type === 'monthly') {
-        url = `/expenses?year=${dateFilter.year}&month=${dateFilter.month}`
-      } else if (dateFilter.type === 'range') {
-        url = `/expenses?startDate=${dateFilter.startDate}&endDate=${dateFilter.endDate}`
+      if (dateFilter) {
+        if (dateFilter.type === 'monthly') {
+          url = `/expenses?year=${dateFilter.year}&month=${dateFilter.month}`
+        } else if (dateFilter.type === 'range') {
+          url = `/expenses?startDate=${dateFilter.startDate}&endDate=${dateFilter.endDate}`
+        }
       }
       
       const response = await api.get(url)
       return response.expenses || []
     },
     {
-      enabled: !!dateFilter
+      refetchOnMount: true
     }
   )
 
@@ -161,6 +161,27 @@ const CategorySummary = ({ selectedCategoryId }) => {
       default:
         return method
     }
+  }
+
+  const getExpensePaymentLabel = (expense) => {
+    if (expense.paymentMethod === 'cash') {
+      return 'Efectivo'
+    }
+    
+    if (expense.paymentMethod === 'credit_card' || expense.paymentMethod === 'debit_card') {
+      if (expense.creditCard) {
+        const cardType = expense.creditCard.cardType?.name || ''
+        // Usar cardMode si existe, sino deducir del paymentMethod
+        const cardMode = expense.creditCard.cardMode === 'debit' ? 'Débito' : 'Crédito'
+        const bankName = expense.creditCard.bank?.name || ''
+        const lastFour = expense.creditCard.lastFourDigits ? `****${expense.creditCard.lastFourDigits}` : ''
+        
+        return `${cardType} ${cardMode} ${bankName} ${lastFour}`.trim()
+      }
+      return expense.paymentMethod === 'credit_card' ? 'Tarjeta de Crédito' : 'Tarjeta de Débito'
+    }
+    
+    return expense.paymentMethod
   }
 
   const totalByPaymentMethod = {
@@ -565,7 +586,7 @@ const CategorySummary = ({ selectedCategoryId }) => {
                             <Chip
                               size="small"
                               icon={getPaymentMethodIcon(expense.paymentMethod)}
-                              label={getPaymentMethodLabel(expense.paymentMethod)}
+                              label={getExpensePaymentLabel(expense)}
                               sx={{
                                 backgroundColor: getPaymentMethodColor(expense.paymentMethod),
                                 color: 'white',
@@ -608,7 +629,7 @@ const CategorySummary = ({ selectedCategoryId }) => {
                                 <Chip
                                   size="small"
                                   icon={getPaymentMethodIcon(expense.paymentMethod)}
-                                  label={getPaymentMethodLabel(expense.paymentMethod)}
+                                  label={getExpensePaymentLabel(expense)}
                                   sx={{
                                     backgroundColor: getPaymentMethodColor(expense.paymentMethod),
                                     color: 'white',

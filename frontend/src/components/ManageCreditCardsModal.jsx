@@ -37,6 +37,26 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
   const [error, setError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   
+  // Función para formatear las fechas de cierre y vencimiento
+  const formatCardDates = (closingDay, paymentDay) => {
+    const now = new Date()
+    const currentMonth = now.getMonth() + 1 // getMonth() returns 0-11
+    
+    // Mes de cierre (generalmente el mes actual)
+    const closingMonth = currentMonth
+    
+    // Mes de vencimiento (generalmente el mes siguiente)
+    let paymentMonth = currentMonth + 1
+    if (paymentMonth > 12) {
+      paymentMonth = 1
+    }
+    
+    return {
+      closing: `${closingDay}/${closingMonth.toString().padStart(2, '0')}`,
+      payment: `${paymentDay}/${paymentMonth.toString().padStart(2, '0')}`
+    }
+  }
+  
   // Función para obtener el último viernes del mes
   const getLastFridayOfMonth = (date = new Date()) => {
     const year = date.getFullYear()
@@ -76,7 +96,8 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
     lastFourDigits: '',
     closingDay: getLastFridayOfMonth(),
     paymentDay: getSecondMondayOfNextMonth(),
-    creditLimit: ''
+    creditLimit: '',
+    cardMode: 'credit' // Por defecto crédito
   })
 
   // Queries
@@ -131,7 +152,8 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
         lastFourDigits: '',
         closingDay: getLastFridayOfMonth(),
         paymentDay: getSecondMondayOfNextMonth(),
-        creditLimit: ''
+        creditLimit: '',
+        cardMode: 'credit'
       })
       
       setShowAddForm(false)
@@ -168,7 +190,8 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
         lastFourDigits: '',
         closingDay: getLastFridayOfMonth(),
         paymentDay: getSecondMondayOfNextMonth(),
-        creditLimit: ''
+        creditLimit: '',
+        cardMode: 'credit'
       })
     }
   }, [open])
@@ -203,8 +226,15 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
                 {creditCards.map((card) => (
                   <ListItem key={card.id} divider>
                     <ListItemText
-                      primary={`${card.cardType?.name} - ${card.bank?.name} ****${card.lastFourDigits}`}
-                      secondary={`${card.cardName} • Cierre: día ${card.closingDay} • Vencimiento: día ${card.paymentDay}`}
+                      primary={`${card.cardType?.name} ${card.cardMode === 'debit' ? 'Débito' : 'Crédito'} ${card.bank?.name} ****${card.lastFourDigits}`}
+                      secondary={
+                        card.cardMode === 'debit'
+                          ? card.cardName
+                          : (() => {
+                              const dates = formatCardDates(card.closingDay, card.paymentDay)
+                              return `${card.cardName} • Límite: $${parseFloat(card.creditLimit || 0).toLocaleString()} • Cierre ${dates.closing} • Vto: ${dates.payment}`
+                            })()
+                      }
                     />
                     <ListItemSecondaryAction>
                       <IconButton 
@@ -242,15 +272,17 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
           /* Formulario para agregar tarjeta */
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Nueva Tarjeta de Crédito
+              Nueva Tarjeta {formData.cardMode === 'credit' ? 'de Crédito' : 'de Débito'}
             </Typography>
             
-            <Alert severity="info" sx={{ mb: 2 }}>
-              📅 <strong>Fechas calculadas automáticamente:</strong><br/>
-              • <strong>Día de cierre:</strong> {getLastFridayOfMonth()} (último viernes del mes)<br/>
-              • <strong>Día de vencimiento:</strong> {getSecondMondayOfNextMonth()} (segundo lunes del mes siguiente)<br/>
-              <em>Puedes modificar estos valores si tu tarjeta tiene fechas diferentes.</em>
-            </Alert>
+            {formData.cardMode === 'credit' && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                📅 <strong>Fechas calculadas automáticamente:</strong><br/>
+                • <strong>Día de cierre:</strong> {getLastFridayOfMonth()} (último viernes del mes)<br/>
+                • <strong>Día de vencimiento:</strong> {getSecondMondayOfNextMonth()} (segundo lunes del mes siguiente)<br/>
+                <em>Puedes modificar estos valores si tu tarjeta tiene fechas diferentes.</em>
+              </Alert>
+            )}
 
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
@@ -288,6 +320,20 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
               </Grid>
 
               <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Modalidad</InputLabel>
+                  <Select
+                    value={formData.cardMode}
+                    onChange={handleChange('cardMode')}
+                    label="Modalidad"
+                  >
+                    <MenuItem value="credit">Crédito</MenuItem>
+                    <MenuItem value="debit">Débito</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Nombre de la tarjeta"
@@ -309,40 +355,48 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Día de cierre"
-                  value={formData.closingDay}
-                  onChange={handleChange('closingDay')}
-                  InputProps={{ inputProps: { min: 1, max: 31 } }}
-                  required
-                />
-              </Grid>
+              {formData.cardMode === 'credit' && (
+                <>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Día de cierre"
+                      value={formData.closingDay}
+                      onChange={handleChange('closingDay')}
+                      InputProps={{ inputProps: { min: 1, max: 31 } }}
+                      required
+                    />
+                  </Grid>
 
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Día de vencimiento"
-                  value={formData.paymentDay}
-                  onChange={handleChange('paymentDay')}
-                  InputProps={{ inputProps: { min: 1, max: 31 } }}
-                  required
-                />
-              </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Día de vencimiento"
+                      value={formData.paymentDay}
+                      onChange={handleChange('paymentDay')}
+                      InputProps={{ inputProps: { min: 1, max: 31 } }}
+                      required
+                    />
+                  </Grid>
+                </>
+              )}
 
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Límite de crédito"
-                  value={formData.creditLimit}
-                  onChange={handleChange('creditLimit')}
-                  placeholder="100000"
-                />
-              </Grid>
+              {formData.cardMode === 'credit' && (
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Límite de crédito"
+                    value={formData.creditLimit}
+                    onChange={handleChange('creditLimit')}
+                    placeholder="100000"
+                    required
+                    helperText="Obligatorio para tarjetas de crédito"
+                  />
+                </Grid>
+              )}
             </Grid>
 
             <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
@@ -355,7 +409,7 @@ const ManageCreditCardsModal = ({ open, onClose }) => {
               <Button
                 variant="contained"
                 onClick={handleAddCard}
-                disabled={loading || !formData.bankId || !formData.cardName}
+                disabled={loading || !formData.bankId || !formData.cardName || (formData.cardMode === 'credit' && !formData.creditLimit)}
                 startIcon={loading ? undefined : <CreditCardIcon />}
               >
                 {loading ? 'Agregando...' : 'Agregar Tarjeta'}

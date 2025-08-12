@@ -25,9 +25,9 @@ router.post('/', [
     .isInt({ min: 1, max: 60 })
     .withMessage('Las cuotas deben estar entre 1 y 60'),
   body('creditCardId')
-    .if(body('paymentMethod').equals('credit_card'))
+    .if(body('paymentMethod').isIn(['credit_card', 'debit_card']))
     .notEmpty()
-    .withMessage('La tarjeta de crédito es requerida para pagos con tarjeta')
+    .withMessage('La tarjeta es requerida para pagos con tarjeta')
 ], expenseController.createExpense);
 
 router.get('/', expenseController.getExpenses);
@@ -50,9 +50,9 @@ router.put('/:id', [
     .isInt({ min: 1, max: 60 })
     .withMessage('Las cuotas deben estar entre 1 y 60'),
   body('creditCardId')
-    .if(body('paymentMethod').equals('credit_card'))
+    .if(body('paymentMethod').isIn(['credit_card', 'debit_card']))
     .notEmpty()
-    .withMessage('La tarjeta de crédito es requerida para pagos con tarjeta')
+    .withMessage('La tarjeta es requerida para pagos con tarjeta')
 ], expenseController.updateExpense);
 
 router.delete('/:id', expenseController.deleteExpense);
