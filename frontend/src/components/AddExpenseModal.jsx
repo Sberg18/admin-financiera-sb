@@ -16,7 +16,9 @@ import {
   IconButton,
   Tooltip,
   Box,
-  Chip
+  Chip,
+  useTheme,
+  useMediaQuery
 } from '@mui/material'
 import { Add as AddIcon, Palette } from '@mui/icons-material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -26,6 +28,8 @@ import api from '../services/api'
 
 const AddExpenseModal = ({ open, onClose }) => {
   const queryClient = useQueryClient()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
@@ -211,9 +215,24 @@ const AddExpenseModal = ({ open, onClose }) => {
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
-      <DialogContent>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm" 
+      fullWidth
+      fullScreen={isMobile}
+      scroll={isMobile ? "body" : "paper"}
+    >
+      <DialogTitle sx={{ 
+        fontSize: { xs: '1.25rem', sm: '1.5rem' },
+        px: { xs: 2, sm: 3 }
+      }}>
+        Agregar Nuevo Gasto
+      </DialogTitle>
+      <DialogContent sx={{ 
+        px: { xs: 2, sm: 3 },
+        pb: { xs: 2, sm: 1 }
+      }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
