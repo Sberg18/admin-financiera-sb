@@ -210,11 +210,133 @@ const updateIncomeCategory = async (req, res) => {
   }
 };
 
+const deleteExpenseCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { Expense } = require('../models');
+
+    // Buscar la categoría
+    const category = await ExpenseCategory.findOne({
+      where: { id }
+    });
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada'
+      });
+    }
+
+    // Verificar que sea del usuario (no se pueden eliminar categorías del sistema)
+    if (category.userId === null) {
+      return res.status(403).json({
+        success: false,
+        message: 'No se pueden eliminar las categorías del sistema'
+      });
+    }
+
+    if (category.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para eliminar esta categoría'
+      });
+    }
+
+    // Buscar la categoría "Sin Categoría"
+    const [sinCategoria] = await ExpenseCategory.findOrCreate({
+      where: { name: 'Sin Categoría', userId: null },
+      defaults: { name: 'Sin Categoría', color: '#757575', userId: null }
+    });
+
+    // Mover todos los gastos de esta categoría a "Sin Categoría"
+    await Expense.update(
+      { categoryId: sinCategoria.id },
+      { where: { categoryId: id } }
+    );
+
+    // Eliminar la categoría
+    await category.destroy();
+
+    res.json({
+      success: true,
+      message: 'Categoría eliminada exitosamente. Los gastos asociados fueron movidos a "Sin Categoría".'
+    });
+  } catch (error) {
+    console.error('Delete expense category error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+const deleteIncomeCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { Income } = require('../models');
+
+    // Buscar la categoría
+    const category = await IncomeCategory.findOne({
+      where: { id }
+    });
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada'
+      });
+    }
+
+    // Verificar que sea del usuario (no se pueden eliminar categorías del sistema)
+    if (category.userId === null) {
+      return res.status(403).json({
+        success: false,
+        message: 'No se pueden eliminar las categorías del sistema'
+      });
+    }
+
+    if (category.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para eliminar esta categoría'
+      });
+    }
+
+    // Buscar la categoría "Sin Categoría"
+    const [sinCategoria] = await IncomeCategory.findOrCreate({
+      where: { name: 'Sin Categoría', userId: null },
+      defaults: { name: 'Sin Categoría', color: '#757575', userId: null }
+    });
+
+    // Mover todos los ingresos de esta categoría a "Sin Categoría"
+    await Income.update(
+      { categoryId: sinCategoria.id },
+      { where: { categoryId: id } }
+    );
+
+    // Eliminar la categoría
+    await category.destroy();
+
+    res.json({
+      success: true,
+      message: 'Categoría eliminada exitosamente. Los ingresos asociados fueron movidos a "Sin Categoría".'
+    });
+  } catch (error) {
+    console.error('Delete income category error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   getExpenseCategories,
   getIncomeCategories,
   createExpenseCategory,
   createIncomeCategory,
   updateExpenseCategory,
-  updateIncomeCategory
+  updateIncomeCategory,
+  deleteExpenseCategory,
+  deleteIncomeCategory
 };

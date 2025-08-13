@@ -32,6 +32,19 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(100),
     allowNull: false,
     field: 'last_name'
+  },
+  address: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  phone: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  profileImage: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'profile_image'
   }
 }, {
   tableName: 'users',
@@ -61,6 +74,10 @@ User.prototype.validatePassword = async function(password) {
 User.prototype.toJSON = function() {
   const user = this.get();
   delete user.password;
+  
+  // Combinar firstName y lastName en name para compatibilidad con frontend
+  user.name = `${user.firstName} ${user.lastName}`.trim();
+  
   return user;
 };
 

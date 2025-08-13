@@ -116,8 +116,107 @@ const getProfile = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Errores de validación',
+        errors: errors.array()
+      });
+    }
+
+    const { name, address, phone, profileImage } = req.body;
+    const userId = req.user.id;
+
+    const updateData = {};
+    
+    // Si se proporciona name, dividirlo en firstName y lastName
+    if (name) {
+      const nameParts = name.trim().split(' ');
+      updateData.firstName = nameParts[0];
+      updateData.lastName = nameParts.slice(1).join(' ') || nameParts[0];
+    }
+    
+    if (address !== undefined) updateData.address = address;
+    if (phone !== undefined) updateData.phone = phone;
+    if (profileImage !== undefined) updateData.profileImage = profileImage;
+
+    const [updatedRowsCount] = await User.update(updateData, {
+      where: { id: userId }
+    });
+
+    if (updatedRowsCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Obtener el usuario actualizado
+    const updatedUser = await User.findByPk(userId);
+
+    res.json({
+      success: true,
+      message: 'Perfil actualizado exitosamente',
+      user: updatedUser.toJSON()
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Errores de validación',
+        errors: errors.array()
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    // Verificar contraseña actual
+    const isCurrentPasswordValid = await req.user.validatePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña actual es incorrecta'
+      });
+    }
+
+    // Actualizar la contraseña (el hook beforeUpdate se encarga del hash)
+    await User.update(
+      { password: newPassword },
+      { where: { id: userId }, individualHooks: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Contraseña actualizada exitosamente'
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
-  getProfile
+  getProfile,
+  updateProfile,
+  changePassword
 };

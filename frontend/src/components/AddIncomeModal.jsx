@@ -26,7 +26,7 @@ import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
 import api from '../services/api'
 
-const AddIncomeModal = ({ open, onClose }) => {
+const AddIncomeModal = ({ open, onClose, initialData }) => {
   const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -34,11 +34,11 @@ const AddIncomeModal = ({ open, onClose }) => {
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
-    incomeDate: dayjs(),
+    incomeDate: initialData?.date ? dayjs(initialData.date) : dayjs(),
     isRecurring: false,
     recurringFrequency: 'monthly',
     categoryId: '',
-    type: 'variable'
+    type: initialData?.type || 'variable'
   })
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false)
@@ -142,7 +142,7 @@ const AddIncomeModal = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Agregar Nuevo Ingreso</DialogTitle>
+      <DialogTitle>{initialData?.title || 'Agregar Nuevo Ingreso'}</DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>

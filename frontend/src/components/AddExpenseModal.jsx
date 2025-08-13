@@ -26,7 +26,7 @@ import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
 import api from '../services/api'
 
-const AddExpenseModal = ({ open, onClose }) => {
+const AddExpenseModal = ({ open, onClose, initialData }) => {
   const queryClient = useQueryClient()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -36,13 +36,13 @@ const AddExpenseModal = ({ open, onClose }) => {
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
-    expenseDate: dayjs(),
+    expenseDate: initialData?.date ? dayjs(initialData.date) : dayjs(),
     paymentMethod: 'cash',
     installments: 1,
     creditCardId: '',
     categoryId: '',
     paymentDate: null,
-    type: 'variable'
+    type: initialData?.type || 'variable'
   })
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false)
@@ -231,7 +231,7 @@ const AddExpenseModal = ({ open, onClose }) => {
         fontSize: { xs: '1.25rem', sm: '1.5rem' },
         px: { xs: 2, sm: 3 }
       }}>
-        Agregar Nuevo Gasto
+        {initialData?.title || 'Agregar Nuevo Gasto'}
       </DialogTitle>
       <DialogContent sx={{ 
         px: { xs: 2, sm: 3 },

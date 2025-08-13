@@ -22,6 +22,7 @@ import IncomeList from '../components/IncomeList'
 import AssetsList from '../components/AssetsList'
 import CategorySummary from '../components/CategorySummary'
 import MonthlyView from './MonthlyView'
+import CashFlowPage from './CashFlowPage'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
 import AddAssetModal from '../components/AddAssetModal'
@@ -70,7 +71,7 @@ const Dashboard = () => {
     const handleNavigateToCategory = (event) => {
       const { categoryId, tab } = event.detail
       setSelectedCategoryId(categoryId)
-      setActiveTab(tab) // Cambiar a la pestaña de Resumen por Categorías
+      setActiveTab(tab === 1 ? 2 : tab) // Ajustar índice por nueva pestaña Cash Flow
     }
 
     window.addEventListener('navigateToCategory', handleNavigateToCategory)
@@ -230,6 +231,7 @@ const Dashboard = () => {
           }}
         >
           <Tab label={isSmallMobile ? "Mensual" : "Vista Mensual"} />
+          <Tab label={isSmallMobile ? "Cash Flow" : "Cash Flow"} />
           <Tab label={isSmallMobile ? "Categorías" : "Resumen por Categorías"} />
           <Tab label="Gastos" />
           <Tab label="Ingresos" />
@@ -241,18 +243,21 @@ const Dashboard = () => {
         </TabPanel>
 
         <TabPanel value={activeTab} index={1} sx={{ p: { xs: 1, md: 3 } }}>
+          <CashFlowPage />
+        </TabPanel>
+        <TabPanel value={activeTab} index={2} sx={{ p: { xs: 1, md: 3 } }}>
           <CategorySummary selectedCategoryId={selectedCategoryId} />
         </TabPanel>
 
-        <TabPanel value={activeTab} index={2} sx={{ p: { xs: 1, md: 3 } }}>
+        <TabPanel value={activeTab} index={3} sx={{ p: { xs: 1, md: 3 } }}>
           <ExpenseList />
         </TabPanel>
 
-        <TabPanel value={activeTab} index={3} sx={{ p: { xs: 1, md: 3 } }}>
+        <TabPanel value={activeTab} index={4} sx={{ p: { xs: 1, md: 3 } }}>
           <IncomeList />
         </TabPanel>
 
-        <TabPanel value={activeTab} index={4} sx={{ p: { xs: 1, md: 3 } }}>
+        <TabPanel value={activeTab} index={5} sx={{ p: { xs: 1, md: 3 } }}>
           <AssetsList />
         </TabPanel>
       </Paper>

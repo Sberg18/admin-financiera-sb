@@ -76,6 +76,10 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
   }
 
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser)
+  }
+
   const value = {
     user,
     token,
@@ -83,6 +87,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
     isAuthenticated: !!user
   }
 

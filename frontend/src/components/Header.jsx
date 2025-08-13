@@ -12,22 +12,35 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button
+  Button,
+  Menu,
+  MenuItem,
+  Avatar,
+  ListItemIcon,
+  ListItemText,
+  Divider
 } from '@mui/material'
 import {
   Brightness4,
   Brightness7,
-  Logout
+  Logout,
+  AccountCircle,
+  Person,
+  Settings,
+  MoreVert
 } from '@mui/icons-material'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
+import UserProfileModal from './UserProfileModal'
 
 const Header = () => {
   const { isDarkMode, toggleTheme } = useTheme()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
   const muiTheme = useMuiTheme()
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'))
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
+  const [profileMenuAnchor, setProfileMenuAnchor] = useState(null)
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
 
   const handleLogoutClick = () => {
     setLogoutDialogOpen(true)
@@ -40,6 +53,19 @@ const Header = () => {
 
   const handleCancelLogout = () => {
     setLogoutDialogOpen(false)
+  }
+
+  const handleProfileMenuOpen = (event) => {
+    setProfileMenuAnchor(event.currentTarget)
+  }
+
+  const handleProfileMenuClose = () => {
+    setProfileMenuAnchor(null)
+  }
+
+  const handleOpenProfileModal = () => {
+    setProfileModalOpen(true)
+    handleProfileMenuClose()
   }
 
   return (
@@ -93,16 +119,85 @@ const Header = () => {
             {isDarkMode ? <Brightness7 /> : <Brightness4 />}
           </IconButton>
           
+          {/* Menú de perfil */}
           <IconButton 
-            onClick={handleLogoutClick} 
+            onClick={handleProfileMenuOpen}
             color="inherit"
             size={isMobile ? "small" : "medium"}
-            title="Cerrar sesión"
+            title="Mi perfil"
           >
-            <Logout />
+            {user?.profileImage ? (
+              <Avatar 
+                src={user.profileImage} 
+                sx={{ 
+                  width: isMobile ? 28 : 32, 
+                  height: isMobile ? 28 : 32 
+                }}
+              />
+            ) : (
+              <AccountCircle />
+            )}
           </IconButton>
         </Box>
       </Toolbar>
+
+      {/* Menú desplegable de perfil */}
+      <Menu
+        anchorEl={profileMenuAnchor}
+        open={Boolean(profileMenuAnchor)}
+        onClose={handleProfileMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: { minWidth: 200 }
+        }}
+      >
+        <Box sx={{ px: 2, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="body2" color="textSecondary">
+            Bienvenido
+          </Typography>
+          <Typography variant="body1" fontWeight="medium">
+            {user?.name || user?.email}
+          </Typography>
+        </Box>
+        
+        <MenuItem onClick={handleOpenProfileModal}>
+          <ListItemIcon>
+            <Person fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Mi Perfil</ListItemText>
+        </MenuItem>
+        
+        <MenuItem onClick={toggleTheme}>
+          <ListItemIcon>
+            {isDarkMode ? <Brightness7 fontSize="small" /> : <Brightness4 fontSize="small" />}
+          </ListItemIcon>
+          <ListItemText>
+            {isDarkMode ? 'Modo Claro' : 'Modo Oscuro'}
+          </ListItemText>
+        </MenuItem>
+        
+        <Divider />
+        
+        <MenuItem onClick={() => { handleProfileMenuClose(); handleLogoutClick(); }}>
+          <ListItemIcon>
+            <Logout fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Cerrar Sesión</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Modal de perfil */}
+      <UserProfileModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
 
       {/* Dialog de confirmación para logout */}
       <Dialog

@@ -29,6 +29,8 @@ router.put('/expenses/:id', [
     .withMessage('El color debe ser un código hexadecimal válido')
 ], categoryController.updateExpenseCategory);
 
+router.delete('/expenses/:id', categoryController.deleteExpenseCategory);
+
 // Rutas para categorías de ingresos
 router.get('/incomes', categoryController.getIncomeCategories);
 router.post('/incomes', [
@@ -50,5 +52,7 @@ router.put('/incomes/:id', [
     .matches(/^#[0-9A-F]{6}$/i)
     .withMessage('El color debe ser un código hexadecimal válido')
 ], categoryController.updateIncomeCategory);
+
+router.delete('/incomes/:id', categoryController.deleteIncomeCategory);
 
 module.exports = router;

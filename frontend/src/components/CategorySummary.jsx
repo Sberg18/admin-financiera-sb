@@ -37,7 +37,8 @@ import {
   CreditCard,
   MonetizationOn,
   AccountBalance,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material'
 import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
@@ -57,6 +58,8 @@ const CategorySummary = ({ selectedCategoryId }) => {
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [editExpenseModalOpen, setEditExpenseModalOpen] = useState(false)
   const [selectedExpense, setSelectedExpense] = useState(null)
+  const [deleteCategoryModalOpen, setDeleteCategoryModalOpen] = useState(false)
+  const [categoryToDelete, setCategoryToDelete] = useState(null)
 
   // Actualizar categoría expandida cuando se reciba un nuevo selectedCategoryId
   React.useEffect(() => {
@@ -213,6 +216,25 @@ const CategorySummary = ({ selectedCategoryId }) => {
     } catch (error) {
       console.error('Error updating category:', error)
       const message = error.response?.data?.message || 'Error al actualizar la categoría'
+      alert(message)
+    }
+  }
+
+  const handleDeleteCategory = (category) => {
+    setCategoryToDelete(category)
+    setDeleteCategoryModalOpen(true)
+  }
+
+  const confirmDeleteCategory = async () => {
+    try {
+      await api.delete(`/categories/expenses/${categoryToDelete.id}`)
+      queryClient.invalidateQueries(['expense-categories'])
+      queryClient.invalidateQueries(['expenses-summary'])
+      setDeleteCategoryModalOpen(false)
+      setCategoryToDelete(null)
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      const message = error.response?.data?.message || 'Error al eliminar la categoría'
       alert(message)
     }
   }
@@ -472,21 +494,41 @@ const CategorySummary = ({ selectedCategoryId }) => {
                     ${categoryData.total.toLocaleString()}
                   </Typography>
                   {categoryData.userId !== null && (
-                    <IconButton
-                      size={isMobile ? "medium" : "small"}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleEditCategory(categoryData)
-                      }}
-                      sx={{ 
-                        ml: 1,
-                        minWidth: isMobile ? 44 : 32,
-                        minHeight: isMobile ? 44 : 32
-                      }}
-                      title="Editar categoría"
-                    >
-                      <EditIcon fontSize={isMobile ? "medium" : "small"} />
-                    </IconButton>
+                    <Box display="flex" gap={0.5}>
+                      <IconButton
+                        size={isMobile ? "medium" : "small"}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEditCategory(categoryData)
+                        }}
+                        sx={{ 
+                          minWidth: isMobile ? 44 : 32,
+                          minHeight: isMobile ? 44 : 32
+                        }}
+                        title="Editar categoría"
+                      >
+                        <EditIcon fontSize={isMobile ? "medium" : "small"} />
+                      </IconButton>
+                      <IconButton
+                        size={isMobile ? "medium" : "small"}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteCategory(categoryData)
+                        }}
+                        sx={{ 
+                          minWidth: isMobile ? 44 : 32,
+                          minHeight: isMobile ? 44 : 32,
+                          color: 'error.main',
+                          '&:hover': {
+                            backgroundColor: 'error.light',
+                            color: 'error.dark'
+                          }
+                        }}
+                        title="Eliminar categoría"
+                      >
+                        <DeleteIcon fontSize={isMobile ? "medium" : "small"} />
+                      </IconButton>
+                    </Box>
                   )}
                   {categoryData.userId === null && (
                     <Chip 
@@ -773,6 +815,50 @@ const CategorySummary = ({ selectedCategoryId }) => {
             }}
           >
             Guardar Cambios
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de confirmación para eliminar categoría */}
+      <Dialog
+        open={deleteCategoryModalOpen}
+        onClose={() => setDeleteCategoryModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle sx={{ fontSize: isMobile ? '1.2rem' : '1.25rem' }}>
+          Confirmar Eliminación
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: isMobile ? '1rem' : '0.875rem' }}>
+            ¿Está seguro que desea eliminar la categoría "{categoryToDelete?.name}"?
+          </Typography>
+          <Typography 
+            sx={{ 
+              mt: 2, 
+              fontSize: isMobile ? '0.9rem' : '0.8rem',
+              color: 'warning.main',
+              fontStyle: 'italic' 
+            }}
+          >
+            Nota: Esta acción no eliminará los gastos asociados, pero los dejará sin categoría.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: isMobile ? 2 : 3, py: isMobile ? 2 : 1 }}>
+          <Button 
+            onClick={() => setDeleteCategoryModalOpen(false)}
+            sx={{ fontSize: isMobile ? '0.9rem' : '0.875rem' }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={confirmDeleteCategory}
+            sx={{ fontSize: isMobile ? '0.9rem' : '0.875rem' }}
+          >
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>
