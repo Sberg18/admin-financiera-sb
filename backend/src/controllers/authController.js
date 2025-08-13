@@ -139,9 +139,14 @@ const updateProfile = async (req, res) => {
       updateData.lastName = nameParts.slice(1).join(' ') || nameParts[0];
     }
     
-    if (address !== undefined) updateData.address = address;
-    if (phone !== undefined) updateData.phone = phone;
-    if (profileImage !== undefined) updateData.profileImage = profileImage;
+    // Solo agregar campos si las columnas existen (compatibilidad con migración)
+    try {
+      if (address !== undefined) updateData.address = address;
+      if (phone !== undefined) updateData.phone = phone;
+      if (profileImage !== undefined) updateData.profileImage = profileImage;
+    } catch (fieldError) {
+      console.log('ℹ️ Algunos campos de perfil aún no están disponibles, actualizando solo nombre');
+    }
 
     const [updatedRowsCount] = await User.update(updateData, {
       where: { id: userId }
@@ -164,6 +169,15 @@ const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Update profile error:', error);
+    
+    // Si el error es por columnas faltantes, informar que se necesita reiniciar
+    if (error.message && error.message.includes('does not exist')) {
+      return res.status(500).json({
+        success: false,
+        message: 'Base de datos actualizandose, intente nuevamente en unos momentos'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

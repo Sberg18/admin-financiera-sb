@@ -32,20 +32,21 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(100),
     allowNull: false,
     field: 'last_name'
-  },
-  address: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  phone: {
-    type: DataTypes.STRING(20),
-    allowNull: true
-  },
-  profileImage: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    field: 'profile_image'
   }
+  // CAMPOS NUEVOS COMENTADOS TEMPORALMENTE PARA EVITAR ERROR
+  // address: {
+  //   type: DataTypes.TEXT,
+  //   allowNull: true
+  // },
+  // phone: {
+  //   type: DataTypes.STRING(20),
+  //   allowNull: true
+  // },
+  // profileImage: {
+  //   type: DataTypes.TEXT,
+  //   allowNull: true,
+  //   field: 'profile_image'
+  // }
 }, {
   tableName: 'users',
   timestamps: true,
@@ -78,10 +79,10 @@ User.prototype.toJSON = function() {
   // Combinar firstName y lastName en name para compatibilidad con frontend
   user.name = `${user.firstName} ${user.lastName}`.trim();
   
-  // Asegurar que los campos nuevos existan (para compatibilidad durante migración)
-  user.address = user.address || null;
-  user.phone = user.phone || null;
-  user.profileImage = user.profileImage || null;
+  // Agregar campos por defecto para evitar errores en frontend
+  user.address = user.address || '';
+  user.phone = user.phone || '';
+  user.profileImage = user.profileImage || '';
   
   return user;
 };

@@ -14,6 +14,7 @@ const categoryRoutes = require('./routes/categories');
 const exchangeRateRoutes = require('./routes/exchangeRate');
 const initializeData = require('./seeds/initializeData');
 const logger = require('./middleware/logger');
+const { autoMigrateUserFields } = require('./utils/autoMigrate');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -107,6 +108,14 @@ const startServer = async () => {
       console.log('✅ Migración cardMode completada');
     } catch (migrationError) {
       console.log('ℹ️ Migración cardMode ya aplicada o no necesaria:', migrationError.message);
+    }
+    
+    // Ejecutar migración automática de campos de usuario
+    try {
+      await autoMigrateUserFields();
+      console.log('✅ Migración de campos de usuario completada');
+    } catch (migrationError) {
+      console.log('ℹ️ Migración de campos de usuario ya aplicada o no necesaria:', migrationError.message);
     }
     
     // Inicializar datos básicos en producción
