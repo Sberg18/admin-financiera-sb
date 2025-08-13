@@ -74,8 +74,18 @@ const Dashboard = () => {
       setActiveTab(tab === 1 ? 2 : tab) // Ajustar índice por nueva pestaña Cash Flow
     }
 
+    const handleNavigateToHome = () => {
+      setActiveTab(0) // Ir a Vista Mensual (primera pestaña)
+      setSelectedCategoryId(null) // Limpiar categoría seleccionada
+    }
+
     window.addEventListener('navigateToCategory', handleNavigateToCategory)
-    return () => window.removeEventListener('navigateToCategory', handleNavigateToCategory)
+    window.addEventListener('navigateToHome', handleNavigateToHome)
+    
+    return () => {
+      window.removeEventListener('navigateToCategory', handleNavigateToCategory)
+      window.removeEventListener('navigateToHome', handleNavigateToHome)
+    }
   }, [])
 
 

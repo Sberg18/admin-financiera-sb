@@ -68,10 +68,29 @@ const Header = () => {
     handleProfileMenuClose()
   }
 
+  const handleLogoClick = () => {
+    // Enviar evento personalizado para navegar a Vista Mensual
+    const event = new CustomEvent('navigateToHome')
+    window.dispatchEvent(event)
+  }
+
   return (
     <AppBar position="static" elevation={2}>
       <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          gap={2}
+          onClick={handleLogoClick}
+          sx={{
+            cursor: 'pointer',
+            '&:hover': {
+              opacity: 0.8
+            },
+            transition: 'opacity 0.2s ease'
+          }}
+          title="Ir a Vista Mensual"
+        >
           <img 
             src="/logo_arman.jpeg" 
             alt="Arman Solutions Logo" 
@@ -110,15 +129,6 @@ const Header = () => {
         </Box>
 
         <Box display="flex" alignItems="center" gap={1}>
-          <IconButton 
-            onClick={toggleTheme} 
-            color="inherit"
-            size={isMobile ? "small" : "medium"}
-            title={isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-          >
-            {isDarkMode ? <Brightness7 /> : <Brightness4 />}
-          </IconButton>
-          
           {/* Menú de perfil */}
           <IconButton 
             onClick={handleProfileMenuOpen}
@@ -174,7 +184,7 @@ const Header = () => {
           <ListItemText>Mi Perfil</ListItemText>
         </MenuItem>
         
-        <MenuItem onClick={toggleTheme}>
+        <MenuItem onClick={() => { toggleTheme(); handleProfileMenuClose(); }}>
           <ListItemIcon>
             {isDarkMode ? <Brightness7 fontSize="small" /> : <Brightness4 fontSize="small" />}
           </ListItemIcon>
