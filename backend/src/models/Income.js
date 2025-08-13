@@ -39,6 +39,12 @@ const Income = sequelize.define('Income', {
   recurringFrequency: {
     type: DataTypes.ENUM('monthly', 'weekly', 'biweekly', 'quarterly', 'yearly'),
     field: 'recurring_frequency'
+  },
+  type: {
+    type: DataTypes.ENUM('fixed', 'variable'),
+    defaultValue: 'variable',
+    allowNull: false,
+    comment: 'Tipo de ingreso: fijo o variable'
   }
 }, {
   tableName: 'incomes',

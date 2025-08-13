@@ -41,7 +41,8 @@ const AddExpenseModal = ({ open, onClose }) => {
     installments: 1,
     creditCardId: '',
     categoryId: '',
-    paymentDate: null
+    paymentDate: null,
+    type: 'variable'
   })
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false)
@@ -205,7 +206,8 @@ const AddExpenseModal = ({ open, onClose }) => {
         installments: 1,
         creditCardId: '',
         categoryId: '',
-        paymentDate: null
+        paymentDate: null,
+        type: 'variable'
       })
       
       onClose()
@@ -391,6 +393,20 @@ const AddExpenseModal = ({ open, onClose }) => {
                 <MenuItem value="cash">Efectivo</MenuItem>
                 <MenuItem value="debit_card">Tarjeta de Débito</MenuItem>
                 <MenuItem value="credit_card">Tarjeta de Crédito</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel>Tipo de Gasto</InputLabel>
+              <Select
+                value={formData.type}
+                onChange={handleChange('type')}
+                label="Tipo de Gasto"
+              >
+                <MenuItem value="fixed">🔒 Fijo</MenuItem>
+                <MenuItem value="variable">📈 Variable</MenuItem>
               </Select>
             </FormControl>
           </Grid>

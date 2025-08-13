@@ -63,6 +63,12 @@ const Expense = sequelize.define('Expense', {
   installmentAmount: {
     type: DataTypes.DECIMAL(12, 2),
     field: 'installment_amount'
+  },
+  type: {
+    type: DataTypes.ENUM('fixed', 'variable'),
+    defaultValue: 'variable',
+    allowNull: false,
+    comment: 'Tipo de gasto: fijo o variable'
   }
 }, {
   tableName: 'expenses',

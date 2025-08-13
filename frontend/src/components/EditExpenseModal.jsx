@@ -37,7 +37,8 @@ const EditExpenseModal = ({ open, onClose, expense }) => {
     installments: 1,
     creditCardId: '',
     categoryId: '',
-    paymentDate: null
+    paymentDate: null,
+    type: 'variable'
   })
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false)
@@ -62,7 +63,8 @@ const EditExpenseModal = ({ open, onClose, expense }) => {
         installments: expense.installments || 1,
         creditCardId: expense.creditCardId || '',
         categoryId: expense.categoryId || '',
-        paymentDate: expense.paymentDate ? dayjs(expense.paymentDate) : null
+        paymentDate: expense.paymentDate ? dayjs(expense.paymentDate) : null,
+        type: expense.type || 'variable'
       })
     }
   }, [expense])

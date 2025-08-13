@@ -37,7 +37,8 @@ const AddIncomeModal = ({ open, onClose }) => {
     incomeDate: dayjs(),
     isRecurring: false,
     recurringFrequency: 'monthly',
-    categoryId: ''
+    categoryId: '',
+    type: 'variable'
   })
   
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false)
@@ -127,7 +128,8 @@ const AddIncomeModal = ({ open, onClose }) => {
         incomeDate: dayjs(),
         isRecurring: false,
         recurringFrequency: 'monthly',
-        categoryId: ''
+        categoryId: '',
+        type: 'variable'
       })
       
       onClose()
@@ -182,6 +184,20 @@ const AddIncomeModal = ({ open, onClose }) => {
               onChange={handleChange('description')}
               placeholder="Ej: Sueldo, Freelance, Venta, etc."
             />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel>Tipo de Ingreso</InputLabel>
+              <Select
+                value={formData.type}
+                onChange={handleChange('type')}
+                label="Tipo de Ingreso"
+              >
+                <MenuItem value="fixed">🔒 Fijo</MenuItem>
+                <MenuItem value="variable">📈 Variable</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
           
           <Grid item xs={12} sm={6}>

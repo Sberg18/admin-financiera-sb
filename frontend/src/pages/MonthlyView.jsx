@@ -182,7 +182,14 @@ const MonthlyView = () => {
     return method === 'cash' ? 'success' : 'info'
   }
 
-  const CategorySection = ({ title, items, color, icon: Icon, type, cardInfo }) => (
+  const CategorySection = ({ title, items, color, icon: Icon, type, cardInfo }) => {
+    // Separar items fijos y variables
+    const fixedItems = items.filter(item => item.type === 'fixed')
+    const variableItems = items.filter(item => item.type === 'variable')
+    const fixedTotal = fixedItems.reduce((sum, item) => sum + parseFloat(item.amount), 0)
+    const variableTotal = variableItems.reduce((sum, item) => sum + parseFloat(item.amount), 0)
+    
+    return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -211,11 +218,35 @@ const MonthlyView = () => {
                 </Box>
               )}
             </Box>
-            <Chip 
-              label={`$${items.reduce((sum, item) => sum + parseFloat(item.amount), 0).toLocaleString()}`}
-              color={type === 'income' ? 'success' : 'error'}
-              size="small"
-            />
+            <Box display="flex" flexDirection="column" gap={0.5}>
+              <Chip 
+                label={`$${items.reduce((sum, item) => sum + parseFloat(item.amount), 0).toLocaleString()}`}
+                color={type === 'income' ? 'success' : 'error'}
+                size="small"
+              />
+              {(fixedTotal > 0 || variableTotal > 0) && (
+                <Box display="flex" gap={0.5}>
+                  {fixedTotal > 0 && (
+                    <Chip 
+                      label={`🔒 $${fixedTotal.toLocaleString()}`}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      sx={{ fontSize: '0.6rem', height: '18px' }}
+                    />
+                  )}
+                  {variableTotal > 0 && (
+                    <Chip 
+                      label={`📈 $${variableTotal.toLocaleString()}`}
+                      size="small"
+                      variant="outlined"
+                      color="default"
+                      sx={{ fontSize: '0.6rem', height: '18px' }}
+                    />
+                  )}
+                </Box>
+              )}
+            </Box>
           </Box>
           <IconButton 
             color="primary" 
@@ -246,13 +277,27 @@ const MonthlyView = () => {
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
-                    {type === 'income' ? (
-                      dayjs(item.incomeDate).format('DD/MM')
-                    ) : (
-                      <Typography variant="body2" fontSize="0.8rem">
-                        Compra: {dayjs(item.expenseDate).format('DD/MM')}
-                      </Typography>
-                    )}
+                    <Box display="flex" alignItems="center" gap={1}>
+                      {type === 'income' ? (
+                        dayjs(item.incomeDate).format('DD/MM')
+                      ) : (
+                        <Typography variant="body2" fontSize="0.8rem">
+                          Compra: {dayjs(item.expenseDate).format('DD/MM')}
+                        </Typography>
+                      )}
+                      <Chip 
+                        label={item.type === 'fixed' ? '🔒' : '📈'}
+                        size="small"
+                        color={item.type === 'fixed' ? 'primary' : 'default'}
+                        sx={{ 
+                          fontSize: '0.6rem', 
+                          height: '16px',
+                          minWidth: '24px',
+                          '& .MuiChip-label': { px: 0.5 }
+                        }}
+                        title={item.type === 'fixed' ? 'Gasto/Ingreso Fijo' : 'Gasto/Ingreso Variable'}
+                      />
+                    </Box>
                   </TableCell>
                   <TableCell>{item.description}</TableCell>
                   <TableCell align="right">
@@ -311,7 +356,8 @@ const MonthlyView = () => {
         </TableContainer>
       </CardContent>
     </Card>
-  )
+    )
+  }
 
   return (
     <Box>
