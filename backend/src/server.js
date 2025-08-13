@@ -25,15 +25,16 @@ app.use(cors({
   credentials: true
 }));
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    success: false,
-    message: 'Demasiadas solicitudes desde esta IP, intenta de nuevo en 15 minutos.'
-  }
-});
-app.use(limiter);
+// Rate limiter temporalmente desactivado
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 100,
+//   message: {
+//     success: false,
+//     message: 'Demasiadas solicitudes desde esta IP, intenta de nuevo en 15 minutos.'
+//   }
+// });
+// app.use(limiter);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

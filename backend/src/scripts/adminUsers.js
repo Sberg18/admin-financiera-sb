@@ -1,3 +1,4 @@
+require('dotenv').config();
 const sequelize = require('../config/database');
 const { User, Expense, Income, CreditCard, UserAsset } = require('../models');
 
@@ -10,17 +11,18 @@ const adminUsers = async () => {
     // Obtener todos los usuarios con estadísticas
     console.log('\n📋 === USUARIOS REGISTRADOS ===');
     
-    const users = await User.findAll({
-      attributes: ['id', 'email', 'createdAt'],
-      order: [['createdAt', 'ASC']]
-    });
+    const [users] = await sequelize.query(`
+      SELECT id, email, created_at as "createdAt" 
+      FROM users 
+      ORDER BY created_at ASC
+    `);
     
     console.log(`Total de usuarios: ${users.length}\n`);
     
     for (const user of users) {
       console.log(`👤 Usuario #${user.id}`);
       console.log(`   📧 Email: ${user.email}`);
-      console.log(`   📅 Registrado: ${user.createdAt.toISOString().split('T')[0]}`);
+      console.log(`   📅 Registrado: ${new Date(user.createdAt).toISOString().split('T')[0]}`);
       
       // Contar datos de cada usuario
       const [expenseCount] = await sequelize.query(

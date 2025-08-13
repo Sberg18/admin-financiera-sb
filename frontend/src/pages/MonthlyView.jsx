@@ -34,7 +34,8 @@ import {
   TrendingUp,
   TrendingDown,
   CreditCard,
-  AccountBalance
+  AccountBalance,
+  Payment
 } from '@mui/icons-material'
 import { useQuery, useQueryClient } from 'react-query'
 import dayjs from 'dayjs'
@@ -108,8 +109,13 @@ const MonthlyView = () => {
     }
   )
 
-  // Agrupar gastos dinámicamente por todas las tarjetas
-  const creditCardExpenses = creditCards?.map(card => ({
+  // Separar tarjetas de crédito y débito
+  const creditCardExpenses = creditCards?.filter(card => card.cardMode === 'credit').map(card => ({
+    card,
+    expenses: monthlyExpenses?.filter(e => e.creditCardId === card.id) || []
+  })) || []
+
+  const debitCardExpenses = creditCards?.filter(card => card.cardMode === 'debit').map(card => ({
     card,
     expenses: monthlyExpenses?.filter(e => e.creditCardId === card.id) || []
   })) || []
@@ -187,7 +193,7 @@ const MonthlyView = () => {
               {cardInfo && (
                 <Box display="flex" gap={1} mt={0.5}>
                   <Chip 
-                    label={`Cierre: ${cardInfo.closingDay || 'N/A'}`}
+                    label={`Cierre: ${cardInfo.closingDay || 'N/A'}/${dayjs().month() + 1 < 10 ? '0' : ''}${dayjs().month() + 1}`}
                     size="small"
                     variant="outlined"
                     clickable
@@ -195,7 +201,7 @@ const MonthlyView = () => {
                     sx={{ fontSize: '0.7rem', height: '20px', cursor: 'pointer' }}
                   />
                   <Chip 
-                    label={`Vto: ${cardInfo.paymentDay || 'N/A'}`}
+                    label={`Vto: ${cardInfo.paymentDay || 'N/A'}/${dayjs().month() + 1 < 10 ? '0' : ''}${dayjs().month() + 1}`}
                     size="small"
                     variant="outlined"
                     clickable
@@ -384,6 +390,9 @@ const MonthlyView = () => {
       <Grid container spacing={3}>
         {/* Columna de Ingresos */}
         <Grid item xs={12} md={6}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', color: 'success.main', mb: 3 }}>
+            💰 INGRESOS
+          </Typography>
           <CategorySection
             title="Ingresos Mensuales"
             items={monthlyIncomes || []}
@@ -395,20 +404,50 @@ const MonthlyView = () => {
 
         {/* Columna de Gastos */}
         <Grid item xs={12} md={6}>
-          {/* Tarjetas de Crédito - Dinámico */}
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', color: 'error.main', mb: 3 }}>
+            💸 GASTOS
+          </Typography>
+          
+          {/* Tarjetas de Crédito */}
+          {creditCardExpenses.length > 0 && (
+            <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 'medium', color: 'primary.main' }}>
+              Tarjetas de Crédito
+            </Typography>
+          )}
           {creditCardExpenses.map((cardData, index) => (
             <CategorySection
               key={cardData.card.id}
               title={`${cardData.card.cardType?.name || 'Tarjeta'} - ${cardData.card.bank?.name} ****${cardData.card.lastFourDigits}`}
               items={cardData.expenses}
-              color={index % 3 === 0 ? 'primary.main' : index % 3 === 1 ? 'secondary.main' : 'info.main'}
+              color="primary.main"
               icon={CreditCard}
               type="expense"
               cardInfo={cardData.card}
             />
           ))}
 
+          {/* Tarjetas de Débito */}
+          {debitCardExpenses.length > 0 && (
+            <Typography variant="h6" sx={{ mt: 3, mb: 1, fontWeight: 'medium', color: 'secondary.main' }}>
+              Tarjetas de Débito
+            </Typography>
+          )}
+          {debitCardExpenses.map((cardData, index) => (
+            <CategorySection
+              key={cardData.card.id}
+              title={`${cardData.card.cardType?.name || 'Tarjeta'} - ${cardData.card.bank?.name} ****${cardData.card.lastFourDigits}`}
+              items={cardData.expenses}
+              color="secondary.main"
+              icon={Payment}
+              type="expense"
+              cardInfo={cardData.card}
+            />
+          ))}
+
           {/* Efectivo */}
+          <Typography variant="h6" sx={{ mt: 3, mb: 1, fontWeight: 'medium', color: 'success.main' }}>
+            Efectivo
+          </Typography>
           <CategorySection
             title="EFECTIVO"
             items={groupedExpenses.efectivo}
@@ -418,7 +457,7 @@ const MonthlyView = () => {
           />
           
           {/* Botón para ver resumen por categorías */}
-          <Card sx={{ mb: 2 }}>
+          <Card sx={{ mb: 2, mt: 3 }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="center" p={2}>
                 <Button

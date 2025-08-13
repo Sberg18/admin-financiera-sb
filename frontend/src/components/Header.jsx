@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   AppBar,
   Toolbar,
@@ -6,7 +6,13 @@ import {
   IconButton,
   Box,
   useMediaQuery,
-  useTheme as useMuiTheme
+  useTheme as useMuiTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button
 } from '@mui/material'
 import {
   Brightness4,
@@ -21,9 +27,19 @@ const Header = () => {
   const { logout } = useAuth()
   const muiTheme = useMuiTheme()
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'))
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setLogoutDialogOpen(true)
+  }
+
+  const handleConfirmLogout = () => {
+    setLogoutDialogOpen(false)
     logout()
+  }
+
+  const handleCancelLogout = () => {
+    setLogoutDialogOpen(false)
   }
 
   return (
@@ -78,7 +94,7 @@ const Header = () => {
           </IconButton>
           
           <IconButton 
-            onClick={handleLogout} 
+            onClick={handleLogoutClick} 
             color="inherit"
             size={isMobile ? "small" : "medium"}
             title="Cerrar sesión"
@@ -87,6 +103,39 @@ const Header = () => {
           </IconButton>
         </Box>
       </Toolbar>
+
+      {/* Dialog de confirmación para logout */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={handleCancelLogout}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          Confirmar cierre de sesión
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Está seguro que desea cerrar su sesión? Deberá iniciar sesión nuevamente para acceder a sus datos financieros.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCancelLogout}
+            color="inherit"
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleConfirmLogout}
+            color="error"
+            variant="contained"
+            autoFocus
+          >
+            Cerrar sesión
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AppBar>
   )
 }
