@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "fix-prod-db": "node backend/src/scripts/fixProductionDB.js",
+    "check-db": "node backend/src/scripts/checkAndFixUserSchema.js",
+    "rollback-user-fields": "node backend/src/scripts/fixProductionDB.js rollback"
+  }
+}

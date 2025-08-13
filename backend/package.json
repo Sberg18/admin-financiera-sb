@@ -12,7 +12,10 @@
     "check-db": "node src/scripts/checkDbStatus.js",
     "admin-users": "node src/scripts/adminUsers.js",
     "delete-user": "node src/scripts/deleteUserData.js",
-    "clean-user": "node src/scripts/cleanUserData.js"
+    "clean-user": "node src/scripts/cleanUserData.js",
+    "fix-prod-db": "node src/scripts/fixProductionDB.js",
+    "check-user-schema": "node src/scripts/checkAndFixUserSchema.js",
+    "add-user-fields": "node src/scripts/addUserProfileFields.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
